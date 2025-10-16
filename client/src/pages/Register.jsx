@@ -1,107 +1,158 @@
-import { useState, useContext } from "react";
-import API from "../api/axios";
-import AuthContext from "../context/AuthContext";
+// client/src/pages/Register.jsx
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axiosInstance from "../api/axios";
 
-const Register = () => {
-  const { dispatch } = useContext(AuthContext);
-  const navigate = useNavigate();
+export default function Register() {
+  const [role, setRole] = useState("worker");
   const [formData, setFormData] = useState({
     name: "",
-    email: "",
+    phone: "",
     password: "",
-    role: "worker",
-    skills: "",
+    location: "",
+    skills: "", // Always a string
     expectedRate: "",
   });
+  const navigate = useNavigate();
 
-  const handleChange = (e) =>
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    // Ensure skills remains a string
+    if (name === "skills" && typeof value !== "string") {
+      console.warn("Skills must be a string. Skipping update.");
+      return;
+    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Basic validation
+    if (!formData.name.trim() || !formData.phone.trim() || !formData.password) {
+      alert("Please fill in all required fields.");
+      return;
+    }
+
+    if (role === "worker") {
+      if (
+        !formData.location.trim() ||
+        !formData.skills.trim() ||
+        !formData.expectedRate
+      ) {
+        alert("Please fill in all worker-specific fields.");
+        return;
+      }
+
+      const rate = Number(formData.expectedRate);
+      if (isNaN(rate) || rate <= 0) {
+        alert("Expected rate must be a positive number.");
+        return;
+      }
+    }
+
     try {
-      const payload = { ...formData, skills: formData.skills.split(",") };
-      const res = await API.post("/auth/register", payload);
-      dispatch({ type: "LOGIN", payload: res.data });
-      navigate("/dashboard");
+      // Build payload safely
+      const payload = {
+        name: formData.name.trim(),
+        phone: formData.phone.trim(),
+        password: formData.password,
+        role,
+      };
+
+      if (role === "worker") {
+        // Safely split skills string
+        const skillList = formData.skills
+          .split(",")
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0);
+
+        if (skillList.length === 0) {
+          alert("Please enter at least one valid skill.");
+          return;
+        }
+
+        payload.location = formData.location.trim();
+        payload.skills = skillList;
+        payload.expectedRate = Number(formData.expectedRate);
+      }
+
+      const res = await axiosInstance.post("/auth/register", payload);
+      localStorage.setItem("token", res.data.token);
+      alert("Registration successful!");
+      navigate("/");
     } catch (err) {
-      alert(err.response.data.message);
+      console.error("Registration error:", err.response?.data || err.message);
+      const errorMessage =
+        err.response?.data?.error ||
+        err.message ||
+        "Registration failed. Please try again.";
+      alert("Error: " + errorMessage);
     }
   };
 
   return (
-    <div className="flex justify-center mt-10">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white p-6 rounded shadow-md w-96"
-      >
-        <h2 className="text-2xl mb-4">Register</h2>
+    <div className="form-container">
+      <h2>Register as {role === "worker" ? "Worker" : "Employer"}</h2>
+      <form onSubmit={handleSubmit}>
         <input
-          type="text"
           name="name"
-          placeholder="Name"
+          placeholder="Full Name"
           value={formData.name}
           onChange={handleChange}
-          className="w-full mb-2 p-2 border rounded"
           required
         />
         <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={formData.email}
+          name="phone"
+          placeholder="Phone (e.g., 9841234567)"
+          value={formData.phone}
           onChange={handleChange}
-          className="w-full mb-2 p-2 border rounded"
           required
         />
         <input
-          type="password"
           name="password"
+          type="password"
           placeholder="Password"
           value={formData.password}
           onChange={handleChange}
-          className="w-full mb-2 p-2 border rounded"
           required
         />
-        <select
-          name="role"
-          value={formData.role}
-          onChange={handleChange}
-          className="w-full mb-2 p-2 border rounded"
-        >
+
+        <select value={role} onChange={(e) => setRole(e.target.value)}>
           <option value="worker">Worker</option>
           <option value="employer">Employer</option>
         </select>
-        {formData.role === "worker" && (
+
+        {role === "worker" && (
           <>
             <input
-              type="text"
-              name="skills"
-              placeholder="Skills (comma separated)"
-              value={formData.skills}
+              name="location"
+              placeholder="Location (Kathmandu, Lalitpur, Bhaktapur)"
+              value={formData.location}
               onChange={handleChange}
-              className="w-full mb-2 p-2 border rounded"
+              required
             />
             <input
-              type="number"
+              name="skills"
+              placeholder="Skills (e.g., Painter, Plumber)"
+              value={formData.skills}
+              onChange={handleChange}
+              required
+            />
+            <input
               name="expectedRate"
-              placeholder="Expected Rate"
+              type="number"
+              placeholder="Expected Daily Rate (NPR)"
               value={formData.expectedRate}
               onChange={handleChange}
-              className="w-full mb-2 p-2 border rounded"
+              required
+              min="1"
             />
           </>
         )}
-        <button
-          type="submit"
-          className="bg-blue-600 text-white w-full py-2 rounded mt-2"
-        >
-          Register
-        </button>
+
+        <button type="submit">Register</button>
       </form>
     </div>
   );
-};
-
-export default Register;
+}

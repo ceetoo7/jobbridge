@@ -1,38 +1,37 @@
-import { useContext } from "react";
-import AuthContext from "../context/AuthContext";
+// client/src/components/Navbar.jsx
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import "../App.css";
 
-const Navbar = () => {
-  const { state, dispatch } = useContext(AuthContext);
+export default function Navbar() {
+  const navigate = useNavigate();
+  const token = localStorage.getItem("token");
 
   const handleLogout = () => {
-    dispatch({ type: "LOGOUT" });
+    localStorage.removeItem("token");
+    navigate("/login");
   };
 
   return (
-    <nav className="bg-blue-600 text-white p-4 flex justify-between">
-      <div className="font-bold text-lg">JobBridge Nepal</div>
-      <div>
-        {state.user ? (
+    <nav className="navbar">
+      <h2>JobBridge Nepal</h2>
+      <div className="nav-links">
+        <Link to="/">Home</Link>
+        {!token ? (
           <>
-            <span className="mr-4">{state.user.name}</span>
-            <button
-              onClick={handleLogout}
-              className="bg-red-500 px-2 py-1 rounded"
-            >
-              Logout
-            </button>
+            <Link to="/register">Register</Link>
+            <Link to="/login">Login</Link>
           </>
         ) : (
           <>
-            <a href="/login" className="mr-4">
-              Login
-            </a>
-            <a href="/register">Register</a>
+            <Link to="/post-gig">Post Gig</Link>
+            <Link to="/gigs">Find Work</Link>
+            <button onClick={handleLogout} className="logout-btn">
+              Logout
+            </button>
           </>
         )}
       </div>
     </nav>
   );
-};
-
-export default Navbar;
+}
