@@ -1,11 +1,33 @@
 // client/src/components/Navbar.jsx
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import "../App.css";
+
+// Helper to decode JWT and extract payload
+const parseJwt = (token) => {
+  try {
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    return null;
+  }
+};
 
 export default function Navbar() {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
+  let userRole = null;
+
+  if (token) {
+    const decoded = parseJwt(token);
+    userRole = decoded?.role || null;
+  }
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -24,8 +46,8 @@ export default function Navbar() {
           </>
         ) : (
           <>
-            <Link to="/post-gig">Post Gig</Link>
-            <Link to="/gigs">Find Work</Link>
+            {userRole === "worker" && <Link to="/gigs">Find Work</Link>}
+            {userRole === "employer" && <Link to="/post-gig">Post Gig</Link>}
             <button onClick={handleLogout} className="logout-btn">
               Logout
             </button>
