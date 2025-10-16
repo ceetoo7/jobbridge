@@ -7,8 +7,9 @@ const UserSchema = new mongoose.Schema({
     phone: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: { type: String, enum: ['worker', 'employer'], default: 'worker' },
-    location: String,
-    skills: [String],
+    location: { type: String, required: true }, // ✅ Now required for BOTH roles
+    // Worker-only fields
+    skills: [{ type: String }],
     expectedRate: Number
 }, { timestamps: true });
 
@@ -19,4 +20,4 @@ UserSchema.pre('save', async function (next) {
 });
 
 const User = mongoose.model('User', UserSchema);
-export default User; // ✅ ES Module export
+export default User;

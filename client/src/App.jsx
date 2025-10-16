@@ -8,6 +8,8 @@ import Login from "./pages/Login";
 import PostGig from "./pages/postGig";
 import GigList from "./pages/GigList";
 import "./App.css";
+import Profile from "./pages/Profile";
+import GigDetail from "./pages/GigDetail";
 
 function App() {
   return (
@@ -21,6 +23,8 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/post-gig" element={<PostGig />} />
             <Route path="/gigs" element={<GigList />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/gigs/:id" element={<GigDetail />} />
           </Routes>
         </main>
       </div>

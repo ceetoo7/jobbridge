@@ -72,7 +72,6 @@ export default function Register() {
           return;
         }
 
-        payload.location = formData.location.trim();
         payload.skills = skillList;
         payload.expectedRate = Number(formData.expectedRate);
       }
@@ -91,47 +90,30 @@ export default function Register() {
     }
   };
 
+  // Show location for BOTH roles
   return (
     <div className="form-container">
       <h2>Register as {role === "worker" ? "Worker" : "Employer"}</h2>
       <form onSubmit={handleSubmit}>
-        <input
-          name="name"
-          placeholder="Full Name"
-          value={formData.name}
-          onChange={handleChange}
-          required
-        />
-        <input
-          name="phone"
-          placeholder="Phone (e.g., 9841234567)"
-          value={formData.phone}
-          onChange={handleChange}
-          required
-        />
-        <input
-          name="password"
-          type="password"
-          placeholder="Password"
-          value={formData.password}
-          onChange={handleChange}
-          required
-        />
+        {/* ... name, phone, password */}
 
         <select value={role} onChange={(e) => setRole(e.target.value)}>
           <option value="worker">Worker</option>
           <option value="employer">Employer</option>
         </select>
 
+        {/* ✅ Location is required for BOTH */}
+        <input
+          name="location"
+          placeholder="Location (Kathmandu, Lalitpur, Bhaktapur)"
+          value={formData.location}
+          onChange={handleChange}
+          required
+        />
+
+        {/* Skills & expectedRate only for worker */}
         {role === "worker" && (
           <>
-            <input
-              name="location"
-              placeholder="Location (Kathmandu, Lalitpur, Bhaktapur)"
-              value={formData.location}
-              onChange={handleChange}
-              required
-            />
             <input
               name="skills"
               placeholder="Skills (e.g., Painter, Plumber)"
@@ -146,7 +128,6 @@ export default function Register() {
               value={formData.expectedRate}
               onChange={handleChange}
               required
-              min="1"
             />
           </>
         )}
