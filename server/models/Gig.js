@@ -9,7 +9,9 @@ const GigSchema = new mongoose.Schema({
     location: { type: String, required: true },
     offeredRate: { type: Number, required: true },
     fairRate: Number,
-    isExploitative: Boolean
+    isExploitative: Boolean,
+    applicants: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }], // optional
+
 }, { timestamps: true });
 
 const Gig = mongoose.model('Gig', GigSchema);

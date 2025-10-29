@@ -10,36 +10,33 @@ export default function Register() {
     phone: "",
     password: "",
     location: "",
-    skills: "", // Always a string
+    skills: "",
     expectedRate: "",
   });
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // Ensure skills remains a string
-    if (name === "skills" && typeof value !== "string") {
-      console.warn("Skills must be a string. Skipping update.");
-      return;
-    }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Basic validation
-    if (!formData.name.trim() || !formData.phone.trim() || !formData.password) {
+    // Basic validation for all users
+    if (
+      !formData.name.trim() ||
+      !formData.phone.trim() ||
+      !formData.password.trim() ||
+      !formData.location.trim()
+    ) {
       alert("Please fill in all required fields.");
       return;
     }
 
+    // Worker-specific validation
     if (role === "worker") {
-      if (
-        !formData.location.trim() ||
-        !formData.skills.trim() ||
-        !formData.expectedRate
-      ) {
+      if (!formData.skills.trim() || !formData.expectedRate.trim()) {
         alert("Please fill in all worker-specific fields.");
         return;
       }
@@ -51,31 +48,26 @@ export default function Register() {
       }
     }
 
+    // Prepare payload
+    const payload = {
+      name: formData.name.trim(),
+      phone: formData.phone.trim(),
+      password: formData.password.trim(),
+      location: formData.location.trim(),
+      role,
+    };
+
+    if (role === "worker") {
+      const skillList = formData.skills
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+
+      payload.skills = skillList;
+      payload.expectedRate = Number(formData.expectedRate);
+    }
+
     try {
-      // Build payload safely
-      const payload = {
-        name: formData.name.trim(),
-        phone: formData.phone.trim(),
-        password: formData.password,
-        role,
-      };
-
-      if (role === "worker") {
-        // Safely split skills string
-        const skillList = formData.skills
-          .split(",")
-          .map((s) => s.trim())
-          .filter((s) => s.length > 0);
-
-        if (skillList.length === 0) {
-          alert("Please enter at least one valid skill.");
-          return;
-        }
-
-        payload.skills = skillList;
-        payload.expectedRate = Number(formData.expectedRate);
-      }
-
       const res = await axiosInstance.post("/auth/register", payload);
       localStorage.setItem("token", res.data.token);
       alert("Registration successful!");
@@ -90,50 +82,104 @@ export default function Register() {
     }
   };
 
-  // Show location for BOTH roles
   return (
-    <div className="form-container">
-      <h2>Register as {role === "worker" ? "Worker" : "Employer"}</h2>
-      <form onSubmit={handleSubmit}>
-        {/* ... name, phone, password */}
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+      <div className="bg-white shadow-lg rounded-2xl w-full max-w-md p-8">
+        <h2 className="text-2xl font-semibold text-center mb-6">
+          Register as{" "}
+          <span className="text-blue-600">
+            {role === "worker" ? "Worker" : "Employer"}
+          </span>
+        </h2>
 
-        <select value={role} onChange={(e) => setRole(e.target.value)}>
-          <option value="worker">Worker</option>
-          <option value="employer">Employer</option>
-        </select>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            name="name"
+            placeholder="Full Name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+            className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
 
-        {/* ✅ Location is required for BOTH */}
-        <input
-          name="location"
-          placeholder="Location (Kathmandu, Lalitpur, Bhaktapur)"
-          value={formData.location}
-          onChange={handleChange}
-          required
-        />
+          <input
+            name="phone"
+            placeholder="Phone Number"
+            value={formData.phone}
+            onChange={handleChange}
+            required
+            className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
 
-        {/* Skills & expectedRate only for worker */}
-        {role === "worker" && (
-          <>
-            <input
-              name="skills"
-              placeholder="Skills (e.g., Painter, Plumber)"
-              value={formData.skills}
-              onChange={handleChange}
-              required
-            />
-            <input
-              name="expectedRate"
-              type="number"
-              placeholder="Expected Daily Rate (NPR)"
-              value={formData.expectedRate}
-              onChange={handleChange}
-              required
-            />
-          </>
-        )}
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+            className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
 
-        <button type="submit">Register</button>
-      </form>
+          <select
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="worker">Worker</option>
+            <option value="employer">Employer</option>
+          </select>
+
+          <input
+            name="location"
+            placeholder="Location (e.g., Kathmandu, Lalitpur)"
+            value={formData.location}
+            onChange={handleChange}
+            required
+            className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+
+          {role === "worker" && (
+            <>
+              <input
+                name="skills"
+                placeholder="Skills (e.g., Plumber, Electrician)"
+                value={formData.skills}
+                onChange={handleChange}
+                required
+                className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+
+              <input
+                name="expectedRate"
+                type="number"
+                placeholder="Expected Daily Rate (NPR)"
+                value={formData.expectedRate}
+                onChange={handleChange}
+                required
+                className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </>
+          )}
+
+          <button
+            type="submit"
+            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-all"
+          >
+            Register
+          </button>
+
+          <p className="text-center text-sm text-gray-600 mt-4">
+            Already have an account?{" "}
+            <span
+              onClick={() => navigate("/login")}
+              className="text-blue-600 hover:underline cursor-pointer"
+            >
+              Login
+            </span>
+          </p>
+        </form>
+      </div>
     </div>
   );
 }

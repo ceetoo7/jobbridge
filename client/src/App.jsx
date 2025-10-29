@@ -10,6 +10,8 @@ import GigList from "./pages/GigList";
 import "./App.css";
 import Profile from "./pages/Profile";
 import GigDetail from "./pages/GigDetail";
+import Applicants from "./pages/Applicants";
+import MyGigs from "./pages/MyGig";
 
 function App() {
   return (
@@ -18,6 +20,7 @@ function App() {
         <Navbar />
         <main className="main-content">
           <Routes>
+            <Route path="/my-gigs" element={<MyGigs />} />
             <Route path="/" element={<Home />} />
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
@@ -25,6 +28,7 @@ function App() {
             <Route path="/gigs" element={<GigList />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/gigs/:id" element={<GigDetail />} />
+            <Route path="/gigs/:gigId/applicants" element={<Applicants />} />
           </Routes>
         </main>
       </div>

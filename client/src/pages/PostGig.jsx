@@ -1,143 +1,87 @@
-// client/src/pages/PostGig.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axiosInstance from "../api/axios";
 
 export default function PostGig() {
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    skill: "",
-    location: "",
-    offeredRate: "",
-  });
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [skill, setSkill] = useState("");
+  const [location, setLocation] = useState("");
+  const [offeredRate, setOfferedRate] = useState("");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error/success when user types
-    if (error) setError("");
-    if (success) setSuccess(false);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Basic validation
-    if (
-      !formData.title ||
-      !formData.skill ||
-      !formData.location ||
-      !formData.offeredRate
-    ) {
-      setError("Please fill in all required fields.");
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("You must be logged in.");
       return;
     }
-
-    const rate = Number(formData.offeredRate);
-    if (isNaN(rate) || rate <= 0) {
-      setError("Offered rate must be a positive number.");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-    setSuccess(false);
 
     try {
-      // In a real app, get employerId from decoded JWT
-      // For now, we assume backend accepts request from authenticated user
-      const response = await axiosInstance.post("/gigs", {
-        ...formData,
-        offeredRate: rate,
+      const res = await fetch("http://localhost:5001/api/gigs", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title,
+          description,
+          skill,
+          location,
+          offeredRate: Number(offeredRate),
+          // ❌ NO employer field needed!
+        }),
       });
 
-      setSuccess(true);
-      setError("");
-
-      // Optional: reset form
-      setFormData({
-        title: "",
-        description: "",
-        skill: "",
-        location: "",
-        offeredRate: "",
-      });
-
-      // Optional: redirect after 2 seconds
-      setTimeout(() => {
+      if (res.ok) {
+        alert("✅ Gig posted!");
         navigate("/gigs");
-      }, 2000);
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to post gig");
+      }
     } catch (err) {
-      console.error("Gig creation error:", err.response?.data || err.message);
-      setError(
-        err.response?.data?.error || "Failed to post gig. Please try again."
-      );
-    } finally {
-      setLoading(false);
+      alert("Network error");
     }
   };
 
   return (
-    <div className="form-container">
-      <h2>{success ? "✅ Gig Posted Successfully!" : "Post a New Gig"}</h2>
-
-      {error && <div className="alert error">{error}</div>}
-      {success && (
-        <div className="alert success">
-          Your gig has been posted! Redirecting to gigs list...
-        </div>
-      )}
-
-      {!success && (
-        <form onSubmit={handleSubmit}>
-          <input
-            name="title"
-            placeholder="Job Title (e.g., Paint living room)"
-            value={formData.title}
-            onChange={handleChange}
-            required
-          />
-          <textarea
-            name="description"
-            placeholder="Description (optional)"
-            value={formData.description}
-            onChange={handleChange}
-            rows="3"
-          />
-          <input
-            name="skill"
-            placeholder="Required Skill (e.g., Painter)"
-            value={formData.skill}
-            onChange={handleChange}
-            required
-          />
-          <input
-            name="location"
-            placeholder="Location (Kathmandu, Lalitpur, Bhaktapur)"
-            value={formData.location}
-            onChange={handleChange}
-            required
-          />
-          <input
-            name="offeredRate"
-            type="number"
-            placeholder="Offered Daily Rate (NPR)"
-            value={formData.offeredRate}
-            onChange={handleChange}
-            required
-            min="1"
-          />
-
-          <button type="submit" disabled={loading}>
-            {loading ? "Posting..." : "Post Gig"}
-          </button>
-        </form>
-      )}
+    <div style={{ maxWidth: "500px", margin: "2rem auto" }}>
+      <h2>Post a Gig</h2>
+      {error && <p style={{ color: "red" }}>{error}</p>}
+      <form onSubmit={handleSubmit}>
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Title"
+          required
+        />
+        <input
+          value={skill}
+          onChange={(e) => setSkill(e.target.value)}
+          placeholder="Skill"
+          required
+        />
+        <input
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          placeholder="Location"
+          required
+        />
+        <input
+          type="number"
+          value={offeredRate}
+          onChange={(e) => setOfferedRate(e.target.value)}
+          placeholder="Offered Rate (NPR)"
+          required
+        />
+        <button type="submit" disabled={loading}>
+          {loading ? "Posting..." : "Post Gig"}
+        </button>
+      </form>
     </div>
   );
 }

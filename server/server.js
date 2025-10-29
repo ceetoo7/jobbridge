@@ -1,4 +1,3 @@
-// server/server.js
 import 'dotenv/config';
 import express from 'express';
 import mongoose from 'mongoose';
@@ -6,31 +5,40 @@ import cors from 'cors';
 import authRoutes from './routes/authRoutes.js';
 import gigRoutes from './routes/gigRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import applicationRoutes from './routes/applicationRoutes.js';
+import { protect } from './middleware/auth.js';
 
 const app = express();
 
-// ✅ Configure CORS to allow your frontend origin
-const corsOptions = {
-    origin: 'http://localhost:5173', // Vite's default port
-    credentials: true, // if you use cookies (optional for JWT in localStorage)
-};
-
-app.use(cors(corsOptions)); // ← Apply the options
+app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
 app.use(express.json());
 
-mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log('✅ Connected to MongoDB'))
-    .catch(err => console.error('❌ MongoDB connection error:', err));
-
+// Public routes
 app.use('/api/auth', authRoutes);
+
+// Protected routes
 app.use('/api/gigs', gigRoutes);
-app.use('/api/users', userRoutes);
+app.use('/api/users', protect, userRoutes);
+
+// Mount application routes (protected)
+app.use('/api/applications', protect, applicationRoutes);
+app.use('/api', protect, applicationRoutes); // enables /api/gigs/:id/applicants
 
 app.get('/', (req, res) => {
     res.json({ message: 'JobBridge Nepal API - Running ✅' });
 });
 
+// ✅ Connect to MongoDB FIRST, then start server
 const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-});
+
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => {
+        console.log('✅ Connected to MongoDB');
+        app.listen(PORT, () => {
+            console.log(`🚀 Server running on http://localhost:${PORT}`);
+        });
+    })
+    .catch((err) => {
+        console.error('❌ MongoDB connection error:', err);
+        process.exit(1); // Exit if DB fails to connect
+    });

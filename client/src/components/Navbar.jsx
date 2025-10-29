@@ -48,7 +48,12 @@ export default function Navbar() {
         ) : (
           <>
             {userRole === "worker" && <Link to="/gigs">Find Work</Link>}
-            {userRole === "employer" && <Link to="/post-gig">Post Gig</Link>}
+            {userRole === "employer" && (
+              <>
+                <Link to="/post-gig">Post Gig</Link>
+                <Link to="/my-gigs">My Gigs</Link>
+              </>
+            )}{" "}
             <button onClick={handleLogout} className="logout-btn">
               Logout
             </button>
