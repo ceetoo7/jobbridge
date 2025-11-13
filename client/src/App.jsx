@@ -12,6 +12,7 @@ import Profile from "./pages/Profile";
 import GigDetail from "./pages/GigDetail";
 import Applicants from "./pages/Applicants";
 import MyGigs from "./pages/MyGig";
+import MatchedGigs from "./pages/MatchedGigs";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Navbar />
         <main className="main-content">
           <Routes>
+            <Route path="/matched-gigs" element={<MatchedGigs />} />
             <Route path="/my-gigs" element={<MyGigs />} />
             <Route path="/" element={<Home />} />
             <Route path="/register" element={<Register />} />

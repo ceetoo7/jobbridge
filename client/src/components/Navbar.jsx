@@ -39,6 +39,7 @@ export default function Navbar() {
       <h2>JobBridge Nepal</h2>
       <div className="nav-links">
         <Link to="/">Home</Link>
+        <Link to="/matched-gigs">Matched Gig</Link>
         <Link to="/profile">Profile</Link>
         {!token ? (
           <>
