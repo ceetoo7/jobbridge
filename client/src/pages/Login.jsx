@@ -17,7 +17,9 @@ export default function Login() {
         "http://localhost:5001/api/auth/login",
         formData
       );
+      console.log(res.data)
       localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
       alert("Login successful!");
       navigate("/");
     } catch (err) {

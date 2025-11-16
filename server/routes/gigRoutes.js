@@ -11,7 +11,7 @@ router.get("/", async (req, res) => {
         const gigs = await Gig.find().populate("employer", "name");
         res.status(200).json(gigs);
     } catch (error) {
-        console.error("Error fetching gigs:", error);
+        // console.error("Error fetching gigs:", error);
         res.status(500).json({ message: "Error fetching gigs" });
     }
 });
@@ -27,18 +27,21 @@ router.get("/:id", async (req, res) => {
 
         res.status(200).json(gig);
     } catch (error) {
-        console.error("Error fetching gig by ID:", error);
+        // console.error("Error fetching gig by ID:", error);
         res.status(500).json({ message: "Error fetching gig" });
     }
 });
 
 // ✅ PROTECTED: get gigs by logged-in employer
-router.get("/mine", verifyToken, async (req, res) => {
+router.get("/mine/:id", verifyToken, async (req, res) => {
+
     try {
-        const gigs = await Gig.find({ employer: req.user.id });
+        console.log("t", req)
+        const gigs = await Gig.find({ employer: req.params.id });
         res.json(gigs);
     } catch (err) {
-        res.status(500).json({ error: "Failed to load your gigs" });
+        res.status(500).json({ error: "Failed to load your gigs" , err});
+        console.log(err);
     }
 });
 
@@ -67,7 +70,7 @@ router.post("/", verifyToken, async (req, res) => {
         await gig.save();
         res.status(201).json(gig);
     } catch (err) {
-        console.error("Error creating gig:", err);
+        // console.error("Error creating gig:", err);
         res.status(500).json({ error: err.message });
     }
 });

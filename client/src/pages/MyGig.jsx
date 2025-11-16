@@ -12,11 +12,14 @@ export default function MyGigs() {
       navigate("/login");
       return;
     }
+    const user = JSON.parse(localStorage.getItem("user"));
+    console.log(user );
 
-    fetch("http://localhost:5001/api/gigs/mine", {
+    fetch(`http://localhost:5001/api/gigs/mine/${user._id}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
+        console.log(res)
         if (res.status === 401) {
           localStorage.removeItem("token");
           navigate("/login");
@@ -26,7 +29,7 @@ export default function MyGigs() {
         return res.json();
       })
       .then((data) => {
-        setGigs(Array.isArray(data) ? data : []);
+        setGigs( data );
         setLoading(false);
       })
       .catch((err) => {
