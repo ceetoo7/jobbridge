@@ -1,48 +1,82 @@
-import React, { useState, useEffect } from "react";
+// Applicants.jsx
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import axios from "axios";
 
 export default function Applicants() {
   const { gigId } = useParams();
-  const [applications, setApplications] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [applicants, setApplicants] = useState([]);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    fetch(`http://localhost:5001/api/gigs/${gigId}/applicants`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setApplications(data);
-        setLoading(false);
-      })
-      .catch(() => {
-        alert("Failed to load applicants");
-        setLoading(false);
-      });
+    if (!gigId) return;
+
+    const fetchApplicants = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get(
+          `http://localhost:5001/api/gigs/${gigId}/applicants`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        setApplicants(res.data);
+      } catch (err) {
+        console.error("Failed to fetch applicants:", err);
+        setError(err.response?.data?.message || err.message);
+      }
+    };
+
+    fetchApplicants();
   }, [gigId]);
 
-  if (loading) return <p>Loading applicants...</p>;
+  if (error) return <div>Error: {error}</div>;
 
   return (
-    <div style={{ maxWidth: "800px", margin: "2rem auto" }}>
-      <h2>Applicants</h2>
-      {applications.length === 0 ? (
+    <div style={{ padding: "20px" }}>
+      <h1>Applicants</h1>
+
+      {applicants.length === 0 ? (
         <p>No applicants yet.</p>
       ) : (
-        applications.map((app) => (
+        applicants.map((a) => (
           <div
-            key={app._id}
+            key={a._id}
             style={{
-              border: "1px solid #ddd",
-              padding: "1rem",
-              margin: "1rem 0",
+              border: "1px solid #ccc",
+              margin: "10px 0",
+              padding: "10px",
+              borderRadius: "8px",
+              background: "#fff",
             }}
           >
-            <h3>{app.worker.name}</h3>
-            <p>Location: {app.worker.location}</p>
-            <p>Skills: {app.worker.skills?.join(", ")}</p>
-            <p>Phone: {app.worker.phone}</p>
+            <p>
+              <strong>Name:</strong> {a.name}
+            </p>
+
+            {a.phone && (
+              <p>
+                <strong>Phone:</strong> {a.phone}
+              </p>
+            )}
+
+            {a.location && (
+              <p>
+                <strong>Location:</strong> {a.location}
+              </p>
+            )}
+
+            {a.skills?.length > 0 && (
+              <p>
+                <strong>Skills:</strong> {a.skills.join(", ")}
+              </p>
+            )}
+
+            {a.expectedRate && (
+              <p>
+                <strong>Expected Rate:</strong> Rs. {a.expectedRate}
+              </p>
+            )}
           </div>
         ))
       )}

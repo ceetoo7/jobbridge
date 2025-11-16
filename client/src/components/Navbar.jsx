@@ -35,27 +35,50 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="navbar">
-      <h2>JobBridge Nepal</h2>
-      <div className="nav-links">
-        <Link to="/">Home</Link>
-        <Link to="/matched-gigs">Matched Gig</Link>
-        <Link to="/profile">Profile</Link>
+    <nav className="navbar bg-gray-800 text-white p-4 flex justify-between items-center">
+      <h2 className="text-xl font-bold">JobBridge Nepal</h2>
+      <div className="nav-links flex space-x-4 items-center">
+        <Link to="/" className="hover:text-gray-300">
+          Home
+        </Link>
+        {token && userRole === "worker" && (
+          <Link to="/matched-gigs" className="hover:text-gray-300">
+            Matched Gigs
+          </Link>
+        )}
+        <Link to="/profile" className="hover:text-gray-300">
+          Profile
+        </Link>
         {!token ? (
           <>
-            <Link to="/register">Register</Link>
-            <Link to="/login">Login</Link>
+            <Link to="/register" className="hover:text-gray-300">
+              Register
+            </Link>
+            <Link to="/login" className="hover:text-gray-300">
+              Login
+            </Link>
           </>
         ) : (
           <>
-            {userRole === "worker" && <Link to="/gigs">Find Work</Link>}
+            {userRole === "worker" && (
+              <Link to="/gigs" className="hover:text-gray-300">
+                Find Work
+              </Link>
+            )}
             {userRole === "employer" && (
               <>
-                <Link to="/post-gig">Post Gig</Link>
-                <Link to="/my-gigs">My Gigs</Link>
+                <Link to="/post-gig" className="hover:text-gray-300">
+                  Post Gig
+                </Link>
+                <Link to="/my-gigs" className="hover:text-gray-300">
+                  My Gigs
+                </Link>
               </>
-            )}{" "}
-            <button onClick={handleLogout} className="logout-btn">
+            )}
+            <button
+              onClick={handleLogout}
+              className="logout-btn bg-red-600 px-2 py-1 rounded hover:bg-red-500"
+            >
               Logout
             </button>
           </>

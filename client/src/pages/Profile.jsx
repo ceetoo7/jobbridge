@@ -11,10 +11,8 @@ export default function Profile() {
     name: "",
     phone: "",
     location: "",
-    // Worker-only fields
     skills: "",
     expectedRate: "",
-    // Employer has no extra fields (for now)
   });
   const navigate = useNavigate();
 
@@ -27,9 +25,7 @@ export default function Profile() {
           name: res.data.name || "",
           phone: res.data.phone || "",
           location: res.data.location || "",
-          skills: Array.isArray(res.data.skills)
-            ? res.data.skills.join(", ")
-            : "",
+          skills: Array.isArray(res.data.skills) ? res.data.skills.join(", ") : "",
           expectedRate: res.data.expectedRate || "",
         });
       } catch (err) {
@@ -52,7 +48,6 @@ export default function Profile() {
         location: formData.location.trim(),
       };
 
-      // Only include worker fields if user is a worker
       if (user?.role === "worker") {
         payload.skills = formData.skills
           .split(",")
@@ -67,9 +62,7 @@ export default function Profile() {
         name: res.data.name || "",
         phone: res.data.phone || "",
         location: res.data.location || "",
-        skills: Array.isArray(res.data.skills)
-          ? res.data.skills.join(", ")
-          : "",
+        skills: Array.isArray(res.data.skills) ? res.data.skills.join(", ") : "",
         expectedRate: res.data.expectedRate || "",
       });
       setEditing(false);
@@ -79,16 +72,19 @@ export default function Profile() {
     }
   };
 
-  if (loading) return <p>Loading profile...</p>;
-  if (!user) return <p>No user data.</p>;
+  if (loading) return <p className="text-center mt-10">Loading profile...</p>;
+  if (!user) return <p className="text-center mt-10">No user data.</p>;
 
   return (
-    <div className="form-container">
-      <h2>{editing ? "Edit Profile" : "My Profile"}</h2>
+    <div className="max-w-3xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg border border-gray-200">
+      <h2 className="text-2xl font-bold mb-6 text-gray-800">
+        {editing ? "Edit Profile" : "My Profile"}
+      </h2>
 
       {editing ? (
-        <form onSubmit={handleSave}>
+        <form className="space-y-4" onSubmit={handleSave}>
           <input
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
             name="name"
             placeholder="Name"
             value={formData.name}
@@ -96,35 +92,32 @@ export default function Profile() {
             required
           />
           <input
+            className="w-full px-4 py-2 border rounded-lg bg-gray-100 cursor-not-allowed"
             name="phone"
             placeholder="Phone"
             value={formData.phone}
             readOnly
           />
-
           <input
+            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
             name="location"
             placeholder="Location"
             value={formData.location}
-            onChange={(e) =>
-              setFormData({ ...formData, location: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
             required
           />
-          {/* No condition — always shown */}
-          {/* Only show worker fields if role is worker */}
           {user.role === "worker" && (
             <>
               <input
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
                 name="skills"
                 placeholder="Skills (e.g., Painter, Plumber)"
                 value={formData.skills}
-                onChange={(e) =>
-                  setFormData({ ...formData, skills: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
                 required
               />
               <input
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
                 name="expectedRate"
                 type="number"
                 placeholder="Expected Rate (NPR)"
@@ -136,44 +129,55 @@ export default function Profile() {
               />
             </>
           )}
-          <button type="submit">Save</button>
-          <button
-            type="button"
-            onClick={() => setEditing(false)}
-            style={{ marginLeft: "10px" }}
-          >
-            Cancel
-          </button>
+          <div className="flex space-x-4">
+            <button
+              type="submit"
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 transition"
+            >
+              Save
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditing(false)}
+              className="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 transition"
+            >
+              Cancel
+            </button>
+          </div>
         </form>
       ) : (
-        <div>
+        <div className="space-y-3 text-gray-700">
           <p>
-            <strong>Name:</strong> {user.name}
+            <span className="font-semibold">Name:</span> {user.name}
           </p>
           <p>
-            <strong>Phone:</strong> {user.phone}
+            <span className="font-semibold">Phone:</span> {user.phone}
           </p>
           <p>
-            <strong>Location:</strong> {user.location}
+            <span className="font-semibold">Location:</span> {user.location}
           </p>
           <p>
-            <strong>Role:</strong>{" "}
+            <span className="font-semibold">Role:</span>{" "}
             {user.role === "worker" ? "Worker" : "Employer"}
           </p>
-
           {user.role === "worker" && (
             <>
               <p>
-                <strong>Skills:</strong>{" "}
+                <span className="font-semibold">Skills:</span>{" "}
                 {Array.isArray(user.skills) ? user.skills.join(", ") : ""}
               </p>
               <p>
-                <strong>Expected Rate:</strong> NPR {user.expectedRate}
+                <span className="font-semibold">Expected Rate:</span> NPR{" "}
+                {user.expectedRate}
               </p>
             </>
           )}
-
-          <button onClick={() => setEditing(true)}>Edit Profile</button>
+          <button
+            onClick={() => setEditing(true)}
+            className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 transition"
+          >
+            Edit Profile
+          </button>
         </div>
       )}
     </div>

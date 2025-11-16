@@ -2,68 +2,73 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axios";
+import { LOCATIONS } from "../utils/locations";
+import { SKILLS } from "../utils/skills";
 
 export default function Register() {
+  const navigate = useNavigate();
   const [role, setRole] = useState("worker");
   const [formData, setFormData] = useState({
     name: "",
+    email: "",
     phone: "",
     password: "",
-    location: "",
-    skills: "",
+    district: "",
+    area: "",
+    skills: [],
     expectedRate: "",
   });
-  const navigate = useNavigate();
 
+  // update value
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // multi-select skills
+  const handleSkillsChange = (e) => {
+    const options = Array.from(e.target.selectedOptions);
+    const values = options.map((o) => o.value);
+    setFormData((prev) => ({ ...prev, skills: values }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Basic validation for all users
+    // basic validation
     if (
-      !formData.name.trim() ||
-      !formData.phone.trim() ||
-      !formData.password.trim() ||
-      !formData.location.trim()
+      !formData.name ||
+      !formData.email ||
+      !formData.password ||
+      !formData.district ||
+      !formData.area
     ) {
       alert("Please fill in all required fields.");
       return;
     }
 
-    // Worker-specific validation
     if (role === "worker") {
-      if (!formData.skills.trim() || !formData.expectedRate.trim()) {
-        alert("Please fill in all worker-specific fields.");
-        return;
-      }
-
-      const rate = Number(formData.expectedRate);
-      if (isNaN(rate) || rate <= 0) {
-        alert("Expected rate must be a positive number.");
+      if (formData.skills.length === 0 || !formData.expectedRate) {
+        alert("Please select skills and expected rate.");
         return;
       }
     }
 
-    // Prepare payload
+    // prepare payload
     const payload = {
       name: formData.name.trim(),
+      email: formData.email.trim(),
       phone: formData.phone.trim(),
       password: formData.password.trim(),
-      location: formData.location.trim(),
       role,
+      location: {
+        district: formData.district,
+        area: formData.area,
+      },
     };
 
     if (role === "worker") {
-      const skillList = formData.skills
-        .split(",")
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
-
-      payload.skills = skillList;
+      payload.skills = formData.skills;
       payload.expectedRate = Number(formData.expectedRate);
     }
 
@@ -74,11 +79,7 @@ export default function Register() {
       navigate("/");
     } catch (err) {
       console.error("Registration error:", err.response?.data || err.message);
-      const errorMessage =
-        err.response?.data?.error ||
-        err.message ||
-        "Registration failed. Please try again.";
-      alert("Error: " + errorMessage);
+      alert("Error: " + (err.response?.data?.error || err.message));
     }
   };
 
@@ -92,6 +93,16 @@ export default function Register() {
           </span>
         </h2>
 
+        {/* Role selector */}
+        <select
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
+          className="w-full border border-gray-300 rounded-lg p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="worker">Worker</option>
+          <option value="employer">Employer</option>
+        </select>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             name="name"
@@ -101,16 +112,22 @@ export default function Register() {
             required
             className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-
+          <input
+            name="email"
+            type="email"
+            placeholder="Email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+            className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
           <input
             name="phone"
             placeholder="Phone Number"
             value={formData.phone}
             onChange={handleChange}
-            required
             className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-
           <input
             type="password"
             name="password"
@@ -121,35 +138,57 @@ export default function Register() {
             className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
 
+          {/* District and Area dropdown */}
           <select
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
+            name="district"
+            value={formData.district}
+            onChange={(e) => {
+              handleChange(e);
+              setFormData((prev) => ({ ...prev, area: "" })); // reset area on district change
+            }}
+            required
             className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="worker">Worker</option>
-            <option value="employer">Employer</option>
+            <option value="">Select District</option>
+            {Object.keys(LOCATIONS).map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
           </select>
 
-          <input
-            name="location"
-            placeholder="Location (e.g., Kathmandu, Lalitpur)"
-            value={formData.location}
+          <select
+            name="area"
+            value={formData.area}
             onChange={handleChange}
             required
             className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          >
+            <option value="">Select Area</option>
+            {formData.district &&
+              LOCATIONS[formData.district].map((a) => (
+                <option key={a} value={a}>
+                  {a}
+                </option>
+              ))}
+          </select>
 
           {role === "worker" && (
             <>
-              <input
+              <select
+                multiple
                 name="skills"
-                placeholder="Skills (e.g., Plumber, Electrician)"
                 value={formData.skills}
-                onChange={handleChange}
+                onChange={handleSkillsChange}
                 required
-                className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-
+                className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 h-32"
+              >
+                {SKILLS.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
               <input
                 name="expectedRate"
                 type="number"

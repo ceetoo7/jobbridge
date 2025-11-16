@@ -1,16 +1,18 @@
-// server/models/User.js
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 const UserSchema = new mongoose.Schema({
     name: { type: String, required: true },
-    phone: { type: String, required: true, unique: true },
+    email: { type: String, required: true, unique: true }, // switch to email as unique identifier
+    phone: { type: String, required: true },
     password: { type: String, required: true },
     role: { type: String, enum: ['worker', 'employer'], default: 'worker' },
-    location: { type: String, required: true }, // ✅ Now required for BOTH roles
-    // Worker-only fields
-    skills: [{ type: String }],
-    expectedRate: Number
+    location: {
+        district: { type: String, required: true },
+        area: { type: String },
+    },
+    skills: { type: [String], required: function () { return this.role === 'worker'; } },
+    expectedRate: { type: Number }
 }, { timestamps: true });
 
 UserSchema.pre('save', async function (next) {

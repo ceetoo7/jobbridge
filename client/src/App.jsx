@@ -10,9 +10,12 @@ import GigList from "./pages/GigList";
 import "./App.css";
 import Profile from "./pages/Profile";
 import GigDetail from "./pages/GigDetail";
-import Applicants from "./pages/Applicants";
-import MyGigs from "./pages/MyGig";
+
 import MatchedGigs from "./pages/MatchedGigs";
+import EditGig from "./pages/EditGig";
+
+import Applicants from "./pages/Applicants.jsx";
+import MyGig from "./pages/MyGig.jsx";
 
 function App() {
   return (
@@ -21,8 +24,9 @@ function App() {
         <Navbar />
         <main className="main-content">
           <Routes>
+            <Route path="/edit-gig/:id" element={<EditGig />} />
             <Route path="/matched-gigs" element={<MatchedGigs />} />
-            <Route path="/my-gigs" element={<MyGigs />} />
+            <Route path="/my-gigs" element={<MyGig />} />
             <Route path="/" element={<Home />} />
             <Route path="/register" element={<Register />} />
             <Route path="/login" element={<Login />} />
@@ -30,7 +34,7 @@ function App() {
             <Route path="/gigs" element={<GigList />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/gigs/:id" element={<GigDetail />} />
-            <Route path="/gigs/:gigId/applicants" element={<Applicants />} />
+            <Route path="/gig-applicants/:gigId" element={<Applicants />} />
           </Routes>
         </main>
       </div>

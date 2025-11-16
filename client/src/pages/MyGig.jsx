@@ -1,67 +1,75 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-export default function MyGigs() {
+const MyGigs = () => {
   const [gigs, setGigs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-    const user = JSON.parse(localStorage.getItem("user"));
-    console.log(user );
-
-    fetch(`http://localhost:5001/api/gigs/mine/${user._id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => {
-        console.log(res)
-        if (res.status === 401) {
-          localStorage.removeItem("token");
-          navigate("/login");
-          return;
-        }
-        if (!res.ok) throw new Error("Failed to load gigs");
-        return res.json();
-      })
-      .then((data) => {
-        setGigs( data );
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Error:", err);
-        setLoading(false);
-        // Optional: show error message
+  const fetchMyGigs = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get("http://localhost:5001/api/gigs/mine", {
+        headers: { Authorization: `Bearer ${token}` },
       });
-  }, [navigate]);
+      setGigs(res.data);
+    } catch (err) {
+      console.error("Failed to fetch your gigs:", err);
+      setError(err.response?.data?.message || err.message);
+    }
+  };
 
-  if (loading) return <p>Loading your gigs...</p>;
+  const deleteGig = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this gig?")) return;
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`http://localhost:5001/api/gigs/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setGigs(gigs.filter((g) => g._id !== id));
+    } catch (err) {
+      console.error("Failed to delete gig:", err);
+      alert(err.response?.data?.message || err.message);
+    }
+  };
+
+  const editGig = (id) => {
+    navigate(`/edit-gig/${id}`);
+  };
+
+  const viewApplicants = (id) => {
+    navigate(`/gig-applicants/${id}`);
+  };
+
+  useEffect(() => {
+    fetchMyGigs();
+  }, []);
+
+  if (error) return <p>{error}</p>;
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div>
       <h2>My Gigs</h2>
       {gigs.length === 0 ? (
         <p>No gigs posted yet.</p>
       ) : (
-        gigs.map((gig) => (
-          <div
-            key={gig._id}
-            style={{
-              border: "1px solid #ccc",
-              margin: "10px",
-              padding: "10px",
-            }}
-          >
-            <h3>{gig.title}</h3>
-            <p>Location: {gig.location}</p>
-            <p>Rate: NPR {gig.offeredRate}</p>
-          </div>
-        ))
+        <ul>
+          {gigs.map((gig) => (
+            <li key={gig._id}>
+              <h3>{gig.title}</h3>
+              <p>{gig.description}</p>
+              <button onClick={() => editGig(gig._id)}>Edit</button>
+              <button onClick={() => deleteGig(gig._id)}>Delete</button>
+              <button onClick={() => viewApplicants(gig._id)}>
+                View Applicants
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );
-}
+};
+
+export default MyGigs;

@@ -1,23 +1,40 @@
 import express from "express";
 import Gig from "../models/Gig.js";
+import User from "../models/User.js";
 import { getFairWage, isExploitative } from "../utils/fairWage.js";
-import { protect } from "../middleware/auth.js"; // ES module import
+import { verifyToken } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// 🚨 KEEP SPECIAL ROUTES FIRST
-router.get("/mine/:id", protect, async (req, res) => {
+/* --------------------------------------------
+   EMPLOYER → GET ALL MY GIGS
+   Must go BEFORE "/:id"
+----------------------------------------------- */
+router.get("/mine", verifyToken, async (req, res) => {
     try {
-        console.log("🟣 /mine/:id route hit for user:", req.user.id);
-        const gigs = await Gig.find({ employer: req.params.id });
+        if (req.user.role !== "employer") {
+            return res.status(403).json({ error: "Only employers can view their gigs" });
+        }
+
+
+
+        const employerId = req.user._id || req.user.id;
+
+        const gigs = await Gig.find({ employer: employerId });
+
+
+
         res.json(gigs);
     } catch (err) {
-        console.error("🔥 Failed to load your gigs:", err);
-        res.status(500).json({ error: "Failed to load your gigs", err });
+        console.error("Failed to fetch employer gigs:", err);
+        res.status(500).json({ error: "Server error" });
     }
 });
 
-// PUBLIC: get all gigs
+
+/* --------------------------------------------
+   PUBLIC → GET ALL GIGS
+----------------------------------------------- */
 router.get("/", async (req, res) => {
     try {
         const gigs = await Gig.find().populate("employer", "name");
@@ -28,7 +45,9 @@ router.get("/", async (req, res) => {
     }
 });
 
-// PUBLIC: get gig by ID
+/* --------------------------------------------
+   PUBLIC → GET ONE GIG BY ID
+----------------------------------------------- */
 router.get("/:id", async (req, res) => {
     try {
         const gig = await Gig.findById(req.params.id).populate("employer", "name");
@@ -43,21 +62,24 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-// PROTECTED: post a new gig
-router.post("/", protect, async (req, res) => {
+/* --------------------------------------------
+   POST → EMPLOYER CREATES GIG
+----------------------------------------------- */
+router.post("/", verifyToken, async (req, res) => {
     try {
         const { title, description, skill, location, offeredRate } = req.body;
-        const employer = req.user.id;
-        console.log("🟢 Creating gig for employer:", employer);
+
+        if (req.user.role !== "employer") {
+            return res.status(403).json({ error: "Only employers can post gigs" });
+        }
 
         const fairRate = getFairWage(location, skill);
         if (!fairRate) {
-            console.log("❌ Invalid location or skill:", location, skill);
             return res.status(400).json({ error: "Invalid location or skill" });
         }
 
         const gig = new Gig({
-            employer,
+            employer: req.user.id,
             title,
             description,
             skill,
@@ -68,11 +90,100 @@ router.post("/", protect, async (req, res) => {
         });
 
         await gig.save();
-        console.log("✅ Gig created:", gig._id);
         res.status(201).json(gig);
     } catch (err) {
         console.error("🔥 Error creating gig:", err);
         res.status(500).json({ error: err.message });
+    }
+});
+
+/* --------------------------------------------
+   WORKER → APPLY TO A GIG
+----------------------------------------------- */
+router.post("/:id/apply", verifyToken, async (req, res) => {
+    try {
+        const gig = await Gig.findById(req.params.id);
+        if (!gig) return res.status(404).json({ error: "Gig not found" });
+
+        if (req.user.role !== "worker") {
+            return res.status(403).json({ error: "Only workers can apply" });
+        }
+
+        if (gig.applicants?.includes(req.user.id)) {
+            return res.status(400).json({ error: "Already applied" });
+        }
+
+        gig.applicants = gig.applicants || [];
+        gig.applicants.push(req.user.id);
+        await gig.save();
+
+        res.status(201).json({ message: "Applied successfully!" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+/* --------------------------------------------
+   EMPLOYER → VIEW APPLICANTS
+----------------------------------------------- */
+router.get("/:gigId/applicants", verifyToken, async (req, res) => {
+    try {
+        const gig = await Gig.findById(req.params.gigId)
+            .populate("applicants", "name skills expectedRate phone location email");
+
+        if (!gig) return res.status(404).json({ message: "Gig not found" });
+
+        if (gig.employer.toString() !== req.user.id) {
+            return res.status(403).json({ message: "Not authorized" });
+        }
+
+        res.status(200).json(gig.applicants || []);
+    } catch (err) {
+        res.status(500).json({ message: "Error fetching applicants", err });
+    }
+});
+
+/* --------------------------------------------
+   EMPLOYER → EDIT GIG
+----------------------------------------------- */
+router.put("/:id", verifyToken, async (req, res) => {
+    try {
+        const gig = await Gig.findById(req.params.id);
+        if (!gig) return res.status(404).json({ error: "Gig not found" });
+
+        if (gig.employer.toString() !== req.user.id) {
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        const updates = ["title", "description", "skill", "location", "offeredRate"];
+        updates.forEach((key) => {
+            if (req.body[key] !== undefined) gig[key] = req.body[key];
+        });
+
+        await gig.save();
+        res.json(gig);
+    } catch (err) {
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
+/* --------------------------------------------
+   EMPLOYER → DELETE GIG
+----------------------------------------------- */
+router.delete("/:id", verifyToken, async (req, res) => {
+    try {
+        const gig = await Gig.findById(req.params.id);
+        if (!gig) return res.status(404).json({ error: "Gig not found" });
+
+        if (gig.employer.toString() !== req.user.id) {
+            return res.status(403).json({ error: "Unauthorized" });
+        }
+
+        await gig.deleteOne();
+        res.json({ message: "Gig deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ error: "Server error" });
     }
 });
 

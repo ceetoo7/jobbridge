@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import axiosInstance from "../api/axios"; // use your axios instance
 
 export default function GigDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [gig, setGig] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [applying, setApplying] = useState(false);
+  const [applied, setApplied] = useState(false);
 
   useEffect(() => {
     const fetchGig = async () => {
@@ -36,10 +39,47 @@ export default function GigDetail() {
     fetchGig();
   }, [id, navigate]);
 
+  const handleApply = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("You must be logged in as a worker to apply.");
+      navigate("/login");
+      return;
+    }
+
+    setApplying(true);
+
+    try {
+      const res = await axiosInstance.post(
+        `/gigs/${id}/apply`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (res.status === 200 || res.status === 201) {
+        alert("✅ Applied successfully!");
+        setApplied(true);
+      } else {
+        alert(res.data.error || "Failed to apply.");
+      }
+    } catch (err) {
+      alert(err.response?.data?.error || "Network error while applying.");
+      console.error(err);
+    } finally {
+      setApplying(false);
+    }
+  };
+
   if (loading)
     return <p className="text-center mt-10 text-gray-500">Loading gig...</p>;
   if (!gig)
     return <p className="text-center mt-10 text-gray-500">Gig not found.</p>;
+
+  const token = localStorage.getItem("token");
+  const decoded = token ? JSON.parse(atob(token.split(".")[1])) : null;
+  const isWorker = decoded?.role === "worker";
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white rounded-xl shadow-md mt-8">
@@ -72,12 +112,30 @@ export default function GigDetail() {
 
       <p className="mt-4">{gig.description}</p>
 
-      <button
-        onClick={() => navigate(-1)}
-        className="mt-6 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-      >
-        ← Back
-      </button>
+      <div className="flex gap-4 mt-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
+        >
+          ← Back
+        </button>
+
+        {isWorker && !applied && (
+          <button
+            onClick={handleApply}
+            disabled={applying}
+            className={`bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg ${
+              applying ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+          >
+            {applying ? "Applying..." : "Apply"}
+          </button>
+        )}
+
+        {isWorker && applied && (
+          <span className="text-green-700 font-semibold">Applied ✔️</span>
+        )}
+      </div>
     </div>
   );
 }

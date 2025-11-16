@@ -17,7 +17,7 @@ export default function Login() {
         "http://localhost:5001/api/auth/login",
         formData
       );
-      console.log(res.data)
+
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       alert("Login successful!");
@@ -36,8 +36,9 @@ export default function Login() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
-            name="phone"
-            placeholder="Phone"
+            name="email"
+            type="email"
+            placeholder="Email"
             onChange={handleChange}
             required
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
