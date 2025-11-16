@@ -1,61 +1,75 @@
-// client/src/pages/MatchedGigs.jsx
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { useAuth } from "../context/AuthContext";
+// MatchedGigs.jsx
+import { useEffect, useState } from "react";
+import axios from "../api/axios";
 
 const MatchedGigs = () => {
-  const { currentUser } = useAuth();
   const [gigs, setGigs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchMatchedGigs = async () => {
-      if (!currentUser) {
-        setError("You are not logged in");
-        setLoading(false);
-        return;
-      }
-
       try {
-        const token = currentUser.token; // make sure your JWT token is here
-        const res = await axios.get("http://localhost:5001/api/match/gigs", {
+        const token = localStorage.getItem("token");
+
+        const response = await axios.get("/match/gigs", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        if (Array.isArray(res.data)) {
-          setGigs(res.data);
-        } else {
-          setGigs([]);
-          console.warn("Matched gigs response is not an array:", res.data);
-        }
+        setGigs(response.data);
       } catch (err) {
         console.error("Failed to fetch matched gigs:", err);
-        setError("Failed to fetch matched gigs");
+        setError("Failed to load gigs. Try again later.");
       } finally {
         setLoading(false);
       }
     };
 
     fetchMatchedGigs();
-  }, [currentUser]);
+  }, []);
 
-  if (loading) return <p>Loading matched gigs...</p>;
-  if (error) return <p>{error}</p>;
-  if (gigs.length === 0) return <p>No matched gigs found.</p>;
+  if (loading)
+    return <p className="text-center mt-10 text-gray-500">Loading gigs...</p>;
+  if (error) return <p className="text-center mt-10 text-red-500">{error}</p>;
 
   return (
-    <div>
-      <h2>Matched Gigs</h2>
-      <ul>
+    <div className="max-w-6xl mx-auto p-4">
+      <h1 className="text-3xl font-bold text-center mb-8 text-indigo-600">
+        Matched Gigs
+      </h1>
+
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {gigs.map((gig) => (
-          <li key={gig._id}>
-            <h3>{gig.title}</h3>
-            <p>{gig.description}</p>
-            <p>Skills: {gig.skills.join(", ")}</p>
-          </li>
+          <div
+            key={gig._id}
+            className="bg-white shadow-md rounded-xl p-6 hover:shadow-xl transition-shadow duration-300"
+          >
+            <h2 className="text-xl font-semibold mb-2">{gig.title}</h2>
+            <p className="text-gray-600 mb-2">{gig.description}</p>
+            <p className="text-gray-500 text-sm mb-1">
+              Skill:{" "}
+              <span className="font-medium text-gray-700">{gig.skill}</span>
+            </p>
+            <p className="text-gray-500 text-sm mb-1">
+              Location:{" "}
+              <span className="font-medium text-gray-700">{gig.location}</span>
+            </p>
+            <p className="text-gray-500 text-sm mb-1">
+              Offered Rate:{" "}
+              <span className="font-medium text-gray-700">
+                ₹{gig.offeredRate}
+              </span>
+            </p>
+            <p
+              className={`text-sm font-medium ${
+                gig.isExploitative ? "text-red-500" : "text-green-500"
+              }`}
+            >
+              {gig.isExploitative ? "Exploitative Rate ⚠️" : "Fair Rate ✅"}
+            </p>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 };

@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
+
 import authRoutes from './routes/authRoutes.js';
 import gigRoutes from './routes/gigRoutes.js';
 import userRoutes from './routes/userRoutes.js';
@@ -19,19 +20,17 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 
 // Protected routes
-app.use('/api/gigs', protect, gigRoutes); // Protect gigs if needed
+app.use('/api/gigs', protect, gigRoutes);
 app.use('/api/users', protect, userRoutes);
 app.use('/api/applications', protect, applicationRoutes);
 
+// Match routes (protected)
+app.use("/api/match", matchRoutes);
 
 // Health check
 app.get('/', (req, res) => {
     res.json({ message: 'JobBridge Nepal API - Running ✅' });
 });
-
-
-// Match routes (protected)
-app.use("/api/match", matchRoutes);
 
 // Connect to MongoDB and start server
 const PORT = process.env.PORT || 5001;
