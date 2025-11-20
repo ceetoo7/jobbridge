@@ -1,5 +1,7 @@
+// GigList.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { getFairWage, isExploitative } from "../utils/fairWage.js";
 
 export default function GigList() {
   const [gigs, setGigs] = useState([]);
@@ -18,11 +20,11 @@ export default function GigList() {
       })
       .then((data) => {
         setGigs(data);
-        setLoading(false); // ✅ FIXED: stop loading
+        setLoading(false);
       })
       .catch((err) => {
         console.error("Gig fetch error:", err);
-        setLoading(false); // ✅ FIXED: even on error, stop loading
+        setLoading(false);
       });
   }, []);
 
@@ -39,32 +41,43 @@ export default function GigList() {
         </p>
       ) : (
         <div className="flex flex-col gap-4">
-          {gigs.map((gig) => (
-            <div
-              key={gig._id}
-              onClick={() => navigate(`/gigs/${gig._id}`)}
-              className={`p-4 rounded-xl shadow-md border-l-4 transition cursor-pointer bg-gray-50 hover:bg-gray-100 ${
-                gig.isExploitative ? "border-red-500" : "border-green-500"
-              }`}
-            >
-              <h3 className="text-lg font-semibold mb-1">{gig.title}</h3>
-              <p>
-                <strong>Employer:</strong> {gig.employer?.name || "Anonymous"}
-              </p>
-              <p>
-                <strong>Skill:</strong> {gig.skill}
-              </p>
-              <p>
-                <strong>Location:</strong> {gig.location}
-              </p>
-              <p>
-                <strong>Offered Rate:</strong> NPR {gig.offeredRate}
-              </p>
-              {gig.isExploitative && (
-                <p className="text-red-500 mt-1">⚠️ Below fair wage</p>
-              )}
-            </div>
-          ))}
+          {gigs.map((gig) => {
+            const fair = getFairWage(gig.location, gig.skill);
+            const exploitative = isExploitative(gig.offeredRate, fair);
+
+            return (
+              <div
+                key={gig._id}
+                onClick={() => navigate(`/gigs/${gig._id}`)}
+                className={`p-4 rounded-xl shadow-md border-l-4 transition cursor-pointer bg-gray-50 hover:bg-gray-100 ${
+                  exploitative ? "border-red-500" : "border-green-500"
+                }`}
+              >
+                <h3 className="text-lg font-semibold mb-1">{gig.title}</h3>
+                <p>
+                  <strong>Employer:</strong> {gig.employer?.name || "Anonymous"}
+                </p>
+                <p>
+                  <strong>Skill:</strong> {gig.skill}
+                </p>
+                <p>
+                  <strong>Location:</strong>{" "}
+                  {typeof gig.location === "string"
+                    ? gig.location
+                    : `${gig.location.area} - ${gig.location.district}`}
+                </p>
+                <p>
+                  <strong>Offered Rate:</strong> NPR {gig.offeredRate}
+                </p>
+                <p>
+                  <strong>Fair Rate:</strong> NPR {fair ?? "N/A"}
+                </p>
+                {exploitative && (
+                  <p className="text-red-500 mt-1">⚠️ Below fair wage</p>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

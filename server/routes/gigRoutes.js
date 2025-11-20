@@ -3,6 +3,8 @@ import Gig from "../models/Gig.js";
 import User from "../models/User.js";
 import { getFairWage, isExploitative } from "../utils/fairWage.js";
 import { verifyToken } from "../middleware/auth.js";
+import Application from '../models/Application.js';
+
 
 const router = express.Router();
 
@@ -109,15 +111,23 @@ router.post("/:id/apply", verifyToken, async (req, res) => {
             return res.status(403).json({ error: "Only workers can apply" });
         }
 
-        if (gig.applicants?.includes(req.user.id)) {
-            return res.status(400).json({ error: "Already applied" });
-        }
+        // Check if already applied
+        const existingApp = await Application.findOne({
+            gig: gig._id,
+            worker: req.user.id,
+        });
 
-        gig.applicants = gig.applicants || [];
-        gig.applicants.push(req.user.id);
-        await gig.save();
+        if (existingApp) return res.status(400).json({ error: "Already applied" });
 
-        res.status(201).json({ message: "Applied successfully!" });
+        // Create new Application
+        const application = new Application({
+            gig: gig._id,
+            worker: req.user.id,
+        });
+
+        await application.save();
+
+        res.status(201).json({ message: "Applied successfully!", application });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Server error" });
@@ -127,22 +137,23 @@ router.post("/:id/apply", verifyToken, async (req, res) => {
 /* --------------------------------------------
    EMPLOYER → VIEW APPLICANTS
 ----------------------------------------------- */
-router.get("/:gigId/applicants", verifyToken, async (req, res) => {
+
+// GET applicants for a gig
+router.get('/:gigId/applicants', verifyToken, async (req, res) => {
     try {
-        const gig = await Gig.findById(req.params.gigId)
-            .populate("applicants", "name skills expectedRate phone location email");
+        const applications = await Application.find({ gig: req.params.gigId })
+            .populate('worker', 'name phone skills expectedRate location')
+            .lean();
 
-        if (!gig) return res.status(404).json({ message: "Gig not found" });
-
-        if (gig.employer.toString() !== req.user.id) {
-            return res.status(403).json({ message: "Not authorized" });
-        }
-
-        res.status(200).json(gig.applicants || []);
+        res.json(applications); // each item now has _id and worker info
     } catch (err) {
-        res.status(500).json({ message: "Error fetching applicants", err });
+        console.error(err);
+        res.status(500).json({ message: 'Server error fetching applicants' });
     }
 });
+
+
+
 
 /* --------------------------------------------
    EMPLOYER → EDIT GIG
@@ -186,5 +197,38 @@ router.delete("/:id", verifyToken, async (req, res) => {
         res.status(500).json({ error: "Server error" });
     }
 });
+
+
+//employer-accept gig
+router.post('/:gigId/applicants/:appId/accept', verifyToken, async (req, res) => {
+    try {
+        const app = await Application.findById(req.params.appId);
+        if (!app) return res.status(404).json({ message: 'Application not found' });
+
+        app.status = 'accepted';
+        await app.save();
+        res.json({ message: 'Applicant accepted' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error accepting applicant' });
+    }
+});
+
+//employer-reject gig
+router.post('/:gigId/applicants/:appId/reject', verifyToken, async (req, res) => {
+    try {
+        const app = await Application.findById(req.params.appId);
+        if (!app) return res.status(404).json({ message: 'Application not found' });
+
+        app.status = 'rejected';
+        await app.save();
+        res.json({ message: 'Applicant rejected' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Server error rejecting applicant' });
+    }
+});
+
+
 
 export default router;

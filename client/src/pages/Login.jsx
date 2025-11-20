@@ -3,20 +3,21 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 export default function Login() {
-  const [formData, setFormData] = useState({ phone: "", password: "" });
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData({ ...formData, [e.target.name]: e.target.value || "" });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post(
-        "http://localhost:5001/api/auth/login",
-        formData
-      );
+      const res = await axios.post("http://localhost:5001/api/auth/login", {
+        email: formData.email,
+        password: formData.password,
+      });
 
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
@@ -39,31 +40,40 @@ export default function Login() {
             name="email"
             type="email"
             placeholder="Email"
+            value={formData.email}
             onChange={handleChange}
             required
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
           />
+
           <input
             name="password"
             type="password"
             placeholder="Password"
+            value={formData.password}
             onChange={handleChange}
             required
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
           />
+
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors duration-200"
+            disabled={loading}
+            className={`w-full py-3 rounded-lg text-white transition-colors duration-200 ${
+              loading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700"
+            }`}
           >
-            Login
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
         <p className="text-center text-sm text-gray-600 mt-5">
-          Not a member?{" "}
+          Not a member?
           <button
             onClick={() => navigate("/register")}
-            className="text-blue-600 hover:underline"
+            className="text-blue-600 hover:underline ml-1"
           >
             Register here
           </button>

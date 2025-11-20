@@ -25,7 +25,9 @@ export default function Profile() {
           name: res.data.name || "",
           phone: res.data.phone || "",
           location: res.data.location || "",
-          skills: Array.isArray(res.data.skills) ? res.data.skills.join(", ") : "",
+          skills: Array.isArray(res.data.skills)
+            ? res.data.skills.join(", ")
+            : "",
           expectedRate: res.data.expectedRate || "",
         });
       } catch (err) {
@@ -62,7 +64,9 @@ export default function Profile() {
         name: res.data.name || "",
         phone: res.data.phone || "",
         location: res.data.location || "",
-        skills: Array.isArray(res.data.skills) ? res.data.skills.join(", ") : "",
+        skills: Array.isArray(res.data.skills)
+          ? res.data.skills.join(", ")
+          : "",
         expectedRate: res.data.expectedRate || "",
       });
       setEditing(false);
@@ -103,7 +107,9 @@ export default function Profile() {
             name="location"
             placeholder="Location"
             value={formData.location}
-            onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, location: e.target.value })
+            }
             required
           />
           {user.role === "worker" && (
@@ -113,7 +119,9 @@ export default function Profile() {
                 name="skills"
                 placeholder="Skills (e.g., Painter, Plumber)"
                 value={formData.skills}
-                onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, skills: e.target.value })
+                }
                 required
               />
               <input
@@ -154,7 +162,10 @@ export default function Profile() {
             <span className="font-semibold">Phone:</span> {user.phone}
           </p>
           <p>
-            <span className="font-semibold">Location:</span> {user.location}
+            <span className="font-semibold">Location:</span>{" "}
+            {user.location
+              ? `${user.location.area}, ${user.location.district}`
+              : "Not set"}
           </p>
           <p>
             <span className="font-semibold">Role:</span>{" "}

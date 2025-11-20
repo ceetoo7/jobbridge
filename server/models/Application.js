@@ -6,7 +6,6 @@ const ApplicationSchema = new mongoose.Schema({
     status: { type: String, enum: ['pending', 'accepted', 'rejected'], default: 'pending' }
 }, { timestamps: true });
 
-// Prevent duplicate applications
 ApplicationSchema.index({ gig: 1, worker: 1 }, { unique: true });
 
 export default mongoose.model('Application', ApplicationSchema);

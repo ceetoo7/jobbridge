@@ -1,6 +1,7 @@
 // MatchedGigs.jsx
 import { useEffect, useState } from "react";
 import axios from "../api/axios";
+import { getFairWage, isExploitative } from "../utils/fairWage";
 
 const MatchedGigs = () => {
   const [gigs, setGigs] = useState([]);
@@ -39,36 +40,46 @@ const MatchedGigs = () => {
       </h1>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {gigs.map((gig) => (
-          <div
-            key={gig._id}
-            className="bg-white shadow-md rounded-xl p-6 hover:shadow-xl transition-shadow duration-300"
-          >
-            <h2 className="text-xl font-semibold mb-2">{gig.title}</h2>
-            <p className="text-gray-600 mb-2">{gig.description}</p>
-            <p className="text-gray-500 text-sm mb-1">
-              Skill:{" "}
-              <span className="font-medium text-gray-700">{gig.skill}</span>
-            </p>
-            <p className="text-gray-500 text-sm mb-1">
-              Location:{" "}
-              <span className="font-medium text-gray-700">{gig.location}</span>
-            </p>
-            <p className="text-gray-500 text-sm mb-1">
-              Offered Rate:{" "}
-              <span className="font-medium text-gray-700">
-                ₹{gig.offeredRate}
-              </span>
-            </p>
-            <p
-              className={`text-sm font-medium ${
-                gig.isExploitative ? "text-red-500" : "text-green-500"
-              }`}
+        {gigs.map((gig) => {
+          const fair = getFairWage(gig.location, gig.skill);
+          const exploitative = isExploitative(gig.offeredRate, fair);
+
+          return (
+            <div
+              key={gig._id}
+              className="bg-white shadow-md rounded-xl p-6 hover:shadow-xl transition-shadow duration-300"
             >
-              {gig.isExploitative ? "Exploitative Rate ⚠️" : "Fair Rate ✅"}
-            </p>
-          </div>
-        ))}
+              <h2 className="text-xl font-semibold mb-2">{gig.title}</h2>
+              <p className="text-gray-600 mb-2">{gig.description}</p>
+              <p className="text-gray-500 text-sm mb-1">
+                Skill:{" "}
+                <span className="font-medium text-gray-700">{gig.skill}</span>
+              </p>
+              <p className="text-gray-500 text-sm mb-1">
+                Location:{" "}
+                <span className="font-medium text-gray-700">
+                  {typeof gig.location === "string"
+                    ? gig.location
+                    : `${gig.location.area} - ${gig.location.district}`}
+                </span>
+              </p>
+              <p className="text-gray-500 text-sm mb-1">
+                Offered Rate:{" "}
+                <span className="font-medium text-gray-700">
+                  NPR {gig.offeredRate}
+                </span>
+              </p>
+              <p
+                className={`text-sm font-medium ${
+                  exploitative ? "text-red-500" : "text-green-500"
+                }`}
+              >
+                {exploitative ? "Exploitative Rate ⚠️" : "Fair Rate ✅"} (
+                {fair ?? "N/A"})
+              </p>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -19,7 +19,7 @@ const processSkills = (skills) => {
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
     try {
-        const { name, phone, password, role = 'worker', location, skills, expectedRate } = req.body;
+        const { name, phone, email, password, role = 'worker', location, skills, expectedRate } = req.body;
 
         // Validate common fields
         if (!name || !phone || !password || !location) {
@@ -35,11 +35,16 @@ router.post('/register', async (req, res) => {
         // Role-specific validation
         let userData = {
             name: name.trim(),
+            email: email.trim(),
             phone: phone.trim(),
             password,
             role,
-            location: location.trim()
+            location: {
+                district: location?.district || "",
+                area: location?.area || ""
+            }
         };
+
 
         if (role === 'worker') {
             const processedSkills = processSkills(skills);
@@ -84,48 +89,48 @@ router.post('/register', async (req, res) => {
     }
 });
 
-// POST /api/auth/login
+
 router.post('/login', async (req, res) => {
     try {
-        const { phone, password } = req.body;
+        const { email, password } = req.body;
 
-        if (!phone || !password) {
-            return res.status(400).json({ error: 'Phone and password are required.' });
+        // Validate input
+        if (!email || !password) {
+            return res.status(400).json({ error: 'Email and password are required.' });
         }
 
-        const user = await User.findOne({ phone });
+        // Find user by email
+        const user = await User.findOne({ email });
         if (!user) {
-            return res.status(400).json({ error: 'Invalid phone or password.' });
+            return res.status(400).json({ error: 'Invalid email or password.' });
         }
 
+        // Compare password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return res.status(400).json({ error: 'Invalid phone or password.' });
+            return res.status(400).json({ error: 'Invalid email or password.' });
         }
 
-        const token = jwt.sign(
-            { id: user._id, role: user.role },
-            process.env.JWT_SECRET,
-            { expiresIn: '7d' }
-        );
+        // Generate JWT
+        const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-        const userResponse = {
-            _id: user._id,
-            name: user.name,
-            phone: user.phone,
-            role: user.role,
-            location: user.location,
-            ...(user.role === 'worker' && {
-                skills: user.skills,
-                expectedRate: user.expectedRate
-            })
-        };
-
-        res.json({ user: userResponse, token });
+        // Send response
+        res.json({
+            token,
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                location: user.location,
+                ...(user.role === 'worker' && { skills: user.skills, expectedRate: user.expectedRate })
+            }
+        });
     } catch (err) {
         console.error('Login error:', err);
         res.status(500).json({ error: 'Server error during login.' });
     }
 });
+
 
 export default router;
