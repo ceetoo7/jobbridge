@@ -1,5 +1,6 @@
 // MatchedGigs.jsx
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "../api/axios";
 import { getFairWage, isExploitative } from "../utils/fairWage";
 
@@ -7,6 +8,7 @@ const MatchedGigs = () => {
   const [gigs, setGigs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const navigate = useNavigate(); // <--- add this
 
   useEffect(() => {
     const fetchMatchedGigs = async () => {
@@ -47,7 +49,8 @@ const MatchedGigs = () => {
           return (
             <div
               key={gig._id}
-              className="bg-white shadow-md rounded-xl p-6 hover:shadow-xl transition-shadow duration-300"
+              onClick={() => navigate(`/gigs/${gig._id}`)} // <--- navigate to gig detail
+              className="bg-white shadow-md rounded-xl p-6 hover:shadow-xl transition-shadow duration-300 cursor-pointer"
             >
               <h2 className="text-xl font-semibold mb-2">{gig.title}</h2>
               <p className="text-gray-600 mb-2">{gig.description}</p>
