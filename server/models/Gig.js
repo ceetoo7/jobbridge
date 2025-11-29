@@ -12,10 +12,14 @@ const GigSchema = new mongoose.Schema(
         description: { type: String },
 
         // FIXED: location should match what you're saving
-        location: { type: String, required: true },
+        location: {
+            district: { type: String, required: true },
+            area: { type: String, required: true },
+        },  
+
 
         // FIXED: skill (single), since you use req.body.skill when creating gigs
-        skill: { type: String, required: true },
+skills: [{ type: String, required: true }],
 
         offeredRate: { type: Number, required: true },
 

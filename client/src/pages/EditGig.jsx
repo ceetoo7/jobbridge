@@ -1,7 +1,8 @@
-// client/src/pages/EditGig.jsx
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axios";
+import { SKILLS } from "../utils/skills";
+import { LOCATIONS } from "../utils/locations";
 
 export default function EditGig() {
   const { id } = useParams();
@@ -9,11 +10,14 @@ export default function EditGig() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    skill: "",
-    location: "",
+    skills: [],
+    district: "",
+    area: "",
     offeredRate: "",
   });
   const [loading, setLoading] = useState(true);
+
+  const { title, description, skill, district, area, offeredRate } = formData;
 
   useEffect(() => {
     const fetchGig = async () => {
@@ -22,12 +26,14 @@ export default function EditGig() {
         const res = await axiosInstance.get(`/gigs/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        const gig = res.data;
         setFormData({
-          title: res.data.title,
-          description: res.data.description,
-          skill: res.data.skill,
-          location: res.data.location,
-          offeredRate: res.data.offeredRate,
+          title: gig.title,
+          description: gig.description,
+          skill: gig.skill || "",
+          district: gig.location?.district || "",
+          area: gig.location?.area || "",
+          offeredRate: gig.offeredRate,
         });
       } catch (err) {
         alert("Failed to load gig.");
@@ -43,68 +49,117 @@ export default function EditGig() {
     e.preventDefault();
     const token = localStorage.getItem("token");
     try {
-      await axiosInstance.put(`/gigs/${id}`, formData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      // ensure skill is a string
+      await axiosInstance.put(
+        `/gigs/${id}`,
+        {
+          title,
+          description,
+          skill,
+          location: { district, area },
+          offeredRate: Number(offeredRate),
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       alert("Gig updated successfully!");
       navigate("/my-gigs");
     } catch (err) {
+      console.error("Update error:", err.response || err);
       alert("Update failed: " + (err.response?.data?.error || err.message));
     }
   };
 
-  if (loading)
-    return <p className="text-center mt-10 text-gray-500">Loading gig...</p>;
+  if (loading) return <p className="text-center mt-10">Loading...</p>;
 
   return (
-    <div className="max-w-lg mx-auto mt-10 bg-white p-6 rounded-xl shadow-md">
-      <h2 className="text-2xl font-bold mb-4">Edit Gig</h2>
+    <div className="max-w-lg mx-auto mt-10 p-6 bg-white rounded shadow-md">
+      {" "}
+      <h2 className="text-2xl font-bold mb-4">Edit Gig</h2>{" "}
       <form onSubmit={handleSubmit} className="space-y-4">
+        {" "}
+        <label>Title</label>
         <input
-          className="w-full p-2 border rounded"
-          placeholder="Title"
-          value={formData.title}
+          type="text"
+          value={title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
           required
-        />
-        <textarea
           className="w-full p-2 border rounded"
-          placeholder="Description"
-          value={formData.description}
+        />
+        <label>Description</label>
+        <textarea
+          value={description}
           onChange={(e) =>
             setFormData({ ...formData, description: e.target.value })
           }
           required
+          className="w-full p-2 border rounded h-24"
         />
-        <input
-          className="w-full p-2 border rounded"
-          placeholder="Skill"
-          value={formData.skill}
-          onChange={(e) => setFormData({ ...formData, skill: e.target.value })}
-          required
-        />
-        <input
-          className="w-full p-2 border rounded"
-          placeholder="Location"
-          value={formData.location}
+        <label>Skills</label>
+        <select
+          value={formData.skills}
           onChange={(e) =>
-            setFormData({ ...formData, location: e.target.value })
+            setFormData({
+              ...formData,
+              skills: Array.from(
+                e.target.selectedOptions,
+                (option) => option.value
+              ),
+            })
           }
           required
-        />
+          className="w-full p-2 border rounded"
+        >
+          {SKILLS.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+        <label>District</label>
+        <select
+          value={district}
+          onChange={(e) =>
+            setFormData({ ...formData, district: e.target.value, area: "" })
+          }
+          required
+          className="w-full p-2 border rounded"
+        >
+          <option value="">Select District</option>
+          {Object.keys(LOCATIONS).map((d) => (
+            <option key={d} value={d}>
+              {d}
+            </option>
+          ))}
+        </select>
+        <label>Area</label>
+        <select
+          value={area}
+          onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+          required
+          disabled={!district}
+          className="w-full p-2 border rounded disabled:bg-gray-100"
+        >
+          <option value="">Select Area</option>
+          {district &&
+            LOCATIONS[district]?.map((a) => (
+              <option key={a} value={a}>
+                {a}
+              </option>
+            ))}
+        </select>
+        <label>Offered Rate (NPR)</label>
         <input
           type="number"
-          className="w-full p-2 border rounded"
-          placeholder="Offered Rate (NPR)"
-          value={formData.offeredRate}
+          value={offeredRate}
           onChange={(e) =>
             setFormData({ ...formData, offeredRate: e.target.value })
           }
           required
+          className="w-full p-2 border rounded"
         />
         <button
           type="submit"
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+          className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700"
         >
           Save Changes
         </button>

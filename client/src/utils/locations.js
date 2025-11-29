@@ -32,7 +32,6 @@ export const LOCATIONS = {
     Bhaktapur: [
         "Bhaktapur Durbar Square",
         "Thimi",
-        "Madhyapur Thimi",
         "Suryavinayak",
         "Duwakot",
         "Khasti",
@@ -47,3 +46,4 @@ export const LOCATIONS = {
         "Other Areas"
     ]
 };
+

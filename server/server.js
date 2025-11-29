@@ -8,7 +8,8 @@ import gigRoutes from './routes/gigRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import applicationRoutes from './routes/applicationRoutes.js';
 import matchRoutes from './routes/matchRoutes.js';
-import { protect } from './middleware/auth.js';
+import { verifyToken } from './middleware/auth.js';
+
 
 const app = express();
 
@@ -19,10 +20,12 @@ app.use(express.json());
 // Public routes
 app.use('/api/auth', authRoutes);
 
+
+
 // Protected routes
-app.use('/api/gigs', protect, gigRoutes);
-app.use('/api/users', protect, userRoutes);
-app.use('/api/applications', protect, applicationRoutes);
+app.use('/api/gigs', verifyToken, gigRoutes);
+app.use('/api/users', verifyToken, userRoutes);
+app.use('/api/applications', verifyToken, applicationRoutes);
 
 // Match routes (protected)
 app.use("/api/match", matchRoutes);
@@ -46,3 +49,5 @@ mongoose.connect(process.env.MONGO_URI)
         console.error('❌ MongoDB connection error:', err);
         process.exit(1);
     });
+
+

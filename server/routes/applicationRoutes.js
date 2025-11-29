@@ -1,12 +1,12 @@
 import express from 'express';
 import Gig from '../models/Gig.js';
 import Application from '../models/Application.js';
-import { protect } from '../middleware/auth.js';
+import { verifyToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
 // POST /api/applications — Apply to a gig
-router.post('/', protect, async (req, res) => {
+router.post('/', verifyToken, async (req, res) => {
     try {
         const { gigId } = req.body;
         const workerId = req.user._id;
@@ -39,7 +39,7 @@ router.post('/', protect, async (req, res) => {
 });
 
 // GET /api/gigs/:gigId/applicants — View applicants (employer only)
-router.get('/gigs/:gigId/applicants', protect, async (req, res) => {
+router.get('/gigs/:gigId/applicants', verifyToken, async (req, res) => {
     try {
         const { gigId } = req.params;
         const employerId = req.user._id;

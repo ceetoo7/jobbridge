@@ -1,4 +1,3 @@
-// MatchedGigs.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../api/axios";
@@ -8,13 +7,17 @@ const MatchedGigs = () => {
   const [gigs, setGigs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const navigate = useNavigate(); // <--- add this
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchMatchedGigs = async () => {
-      try {
-        const token = localStorage.getItem("token");
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate("/login");
+        return;
+      }
 
+      try {
         const response = await axios.get("/match/gigs", {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -29,7 +32,7 @@ const MatchedGigs = () => {
     };
 
     fetchMatchedGigs();
-  }, []);
+  }, [navigate]);
 
   if (loading)
     return <p className="text-center mt-10 text-gray-500">Loading gigs...</p>;
@@ -37,19 +40,27 @@ const MatchedGigs = () => {
 
   return (
     <div className="max-w-6xl mx-auto p-4">
+      {" "}
       <h1 className="text-3xl font-bold text-center mb-8 text-indigo-600">
-        Matched Gigs
+        Matched Gigs{" "}
       </h1>
-
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {gigs.map((gig) => {
           const fair = getFairWage(gig.location, gig.skill);
-          const exploitative = isExploitative(gig.offeredRate, fair);
+          const offered = Number(gig.offeredRate);
+          const exploitative = isExploitative(offered, fair, 0.95); // check <95% of fair wage
+
+          const locationStr =
+            typeof gig.location === "string"
+              ? gig.location
+              : `${gig.location.district || "Unknown District"}, ${
+                  gig.location.area || "Unknown Area"
+                }`;
 
           return (
             <div
               key={gig._id}
-              onClick={() => navigate(`/gigs/${gig._id}`)} // <--- navigate to gig detail
+              onClick={() => navigate(`/gigs/${gig._id}`)}
               className="bg-white shadow-md rounded-xl p-6 hover:shadow-xl transition-shadow duration-300 cursor-pointer"
             >
               <h2 className="text-xl font-semibold mb-2">{gig.title}</h2>
@@ -60,17 +71,11 @@ const MatchedGigs = () => {
               </p>
               <p className="text-gray-500 text-sm mb-1">
                 Location:{" "}
-                <span className="font-medium text-gray-700">
-                  {typeof gig.location === "string"
-                    ? gig.location
-                    : `${gig.location.area} - ${gig.location.district}`}
-                </span>
+                <span className="font-medium text-gray-700">{locationStr}</span>
               </p>
               <p className="text-gray-500 text-sm mb-1">
                 Offered Rate:{" "}
-                <span className="font-medium text-gray-700">
-                  NPR {gig.offeredRate}
-                </span>
+                <span className="font-medium text-gray-700">NPR {offered}</span>
               </p>
               <p
                 className={`text-sm font-medium ${

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axiosInstance from "../api/axios"; // use your axios instance
+import axiosInstance from "../api/axios";
+import { getFairWage } from "../utils/fairWage";
 
 export default function GigDetail() {
   const { id } = useParams();
@@ -28,7 +29,11 @@ export default function GigDetail() {
         if (!res.ok) throw new Error("Failed to load gig");
 
         const data = await res.json();
-        setGig(data);
+
+        // compute fair wage & exploitative flag
+        const fair = getFairWage(data.location, data.skill);
+        const isExploitative = data.offeredRate < fair * 0.95; // 95% threshold
+        setGig({ ...data, fairRate: fair, isExploitative });
       } catch (err) {
         console.error("Fetch gig error:", err);
       } finally {
@@ -83,23 +88,31 @@ export default function GigDetail() {
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white rounded-xl shadow-md mt-8">
-      <h2 className="text-2xl font-bold mb-2">{gig.title}</h2>
+      {" "}
+      <h2 className="text-2xl font-bold mb-2">{gig.title}</h2>{" "}
       <p className="text-gray-700 mb-1">
-        <strong>Employer:</strong> {gig.employer?.name || "Anonymous"}
-      </p>
+        {" "}
+        <strong>Employer:</strong> {gig.employer?.name || "Anonymous"}{" "}
+      </p>{" "}
       <p className="text-gray-700 mb-1">
-        <strong>Skill:</strong> {gig.skill}
-      </p>
+        {" "}
+        <strong>Skill:</strong> {gig.skill}{" "}
+      </p>{" "}
       <p className="text-gray-700 mb-1">
-        <strong>Location:</strong> {gig.location}
-      </p>
+        {" "}
+        <strong>Location:</strong>{" "}
+        {typeof gig.location === "string"
+          ? gig.location
+          : `${gig.location.area} - ${gig.location.district}`}{" "}
+      </p>{" "}
       <p className="text-gray-700 mb-1">
-        <strong>Offered Rate:</strong> NPR {gig.offeredRate}
-      </p>
+        {" "}
+        <strong>Offered Rate:</strong> NPR {gig.offeredRate}{" "}
+      </p>{" "}
       <p className="text-gray-700 mb-4">
-        <strong>Fair Rate:</strong> NPR {gig.fairRate}
+        {" "}
+        <strong>Fair Rate:</strong> NPR {gig.fairRate}{" "}
       </p>
-
       {gig.isExploitative ? (
         <p className="text-red-600 font-semibold">
           ⚠️ This gig is below fair wage.
@@ -109,9 +122,7 @@ export default function GigDetail() {
           ✅ This gig meets fair wage standards.
         </p>
       )}
-
       <p className="mt-4">{gig.description}</p>
-
       <div className="flex gap-4 mt-6">
         <button
           onClick={() => navigate(-1)}

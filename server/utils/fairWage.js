@@ -1,4 +1,3 @@
-// Average fair wage per skill per district (NPR)
 const FAIR_WAGE_TABLE = {
     Kathmandu: {
         Plumber: 1200,
@@ -69,7 +68,6 @@ const FAIR_WAGE_TABLE = {
 export function getFairWage(location, skill) {
     if (!location || !skill) return null;
 
-    // location can be string "Kathmandu - Thamel" or object {district, area}
     let district = "";
     if (typeof location === "string") {
         district = location.split(" - ")[0];
@@ -77,12 +75,14 @@ export function getFairWage(location, skill) {
         district = location.district || "";
     }
 
-    return FAIR_WAGE_TABLE[district]?.[skill] || null;
+    const fair = FAIR_WAGE_TABLE[district]?.[skill];
+    return fair != null ? Number(fair) : null; // ensure it’s a number
 }
 
-
-// Returns true if offered wage is exploitative (<80% of fair wage)
-export function isExploitative(offered, fair) {
+// Returns true if offered wage is exploitative (<90% of fair wage)
+export function isExploitative(offered, fair, threshold = 0.9) {
     if (!offered || !fair) return false;
-    return offered < fair * 0.8;
+    return offered < fair * threshold;
 }
+
+
