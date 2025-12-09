@@ -72,9 +72,9 @@ export default function EditGig() {
   if (loading) return <p className="text-center mt-10">Loading...</p>;
 
   return (
-    <div className="max-w-lg mx-auto mt-10 p-6 bg-white rounded shadow-md">
+    <div className="max-w-lg mx-auto mt-10 p-6 bg-background rounded-xl shadow-lg">
       {" "}
-      <h2 className="text-2xl font-bold mb-4">Edit Gig</h2>{" "}
+      <h2 className="text-2xl font-bold  text-primary mb-4">Edit Gig</h2>{" "}
       <form onSubmit={handleSubmit} className="space-y-4">
         {" "}
         <label>Title</label>
@@ -159,7 +159,7 @@ export default function EditGig() {
         />
         <button
           type="submit"
-          className="px-4 py-2 text-white bg-blue-600 rounded hover:bg-blue-700"
+          className="px-4 py-2 text-white bg-primary rounded hover:bg-highlight"
         >
           Save Changes
         </button>

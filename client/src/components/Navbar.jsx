@@ -2,7 +2,7 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-// Helper to decode JWT and extract payload
+// Helper to decode JWT
 const parseJwt = (token) => {
   try {
     const base64Url = token.split(".")[1];
@@ -35,49 +35,56 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="navbar bg-gray-800 text-white p-4 flex justify-between items-center">
-      <h2 className="text-xl font-bold">JobBridge Nepal</h2>
-      <div className="nav-links flex space-x-4 items-center">
-        <Link to="/" className="hover:text-gray-300">
+    <nav className="sticky top-0 z-50 flex justify-between items-center p-4 bg-primary text-white">
+      <h2 className="text-2xl font-bold">JobBridge Nepal</h2>
+
+      <div className="flex space-x-6 items-center">
+        <Link to="/" className="transition hover:text-highlight">
           Home
         </Link>
+
         {token && userRole === "worker" && (
-          <Link to="/matched-gigs" className="hover:text-gray-300">
+          <Link to="/matched-gigs" className="transition hover:text-highlight">
             Matched Gigs
           </Link>
         )}
-        <Link to="/profile" className="hover:text-gray-300">
+
+        <Link to="/profile" className="transition hover:text-highlight">
           Profile
         </Link>
+
         {!token ? (
           <>
-            <Link to="/register" className="hover:text-gray-300">
+            <Link to="/register" className="transition hover:text-secondary">
               Register
             </Link>
-            <Link to="/login" className="hover:text-gray-300">
+            <Link to="/login" className="transition hover:text-highlight">
               Login
             </Link>
           </>
         ) : (
           <>
             {userRole === "worker" && (
-              <Link to="/gigs" className="hover:text-gray-300">
+              <Link to="/gigs" className="transition hover:text-highlight">
                 Find Work
               </Link>
             )}
             {userRole === "employer" && (
               <>
-                <Link to="/post-gig" className="hover:text-gray-300">
+                <Link
+                  to="/post-gig"
+                  className="transition hover:text-highlight"
+                >
                   Post Gig
                 </Link>
-                <Link to="/my-gigs" className="hover:text-gray-300">
+                <Link to="/my-gigs" className="transition hover:text-highlight">
                   My Gigs
                 </Link>
               </>
             )}
             <button
               onClick={handleLogout}
-              className="logout-btn bg-red-600 px-2 py-1 rounded hover:bg-red-500"
+              className="px-3 py-1 rounded-lg transition bg-highlight text-black hover:bg-[#fd9300]"
             >
               Logout
             </button>

@@ -79,17 +79,17 @@ export default function Profile() {
   if (!user) return <p className="text-center mt-10">No user data.</p>;
 
   return (
-    <div className="max-w-3xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg border border-gray-200">
-      {" "}
+    <div className="max-w-3xl mx-auto mt-10 p-6 bg-background shadow-lg rounded-xl border border-gray-200">
       <h2 className="text-2xl font-bold mb-6 text-gray-800">
-        {editing ? "Edit Profile" : "My Profile"}{" "}
+        {editing ? "Edit Profile" : "My Profile"}
       </h2>
       {editing ? (
         <form className="space-y-4" onSubmit={handleSave}>
+          {/* Name */}
           <div>
             <label className="block font-medium mb-1">Name:</label>
             <input
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
               name="name"
               value={formData.name}
               onChange={(e) =>
@@ -98,7 +98,7 @@ export default function Profile() {
               required
             />
           </div>
-
+          {/* Phone */}
           <div>
             <label className="block font-medium mb-1">Phone:</label>
             <input
@@ -108,12 +108,11 @@ export default function Profile() {
               readOnly
             />
           </div>
-
+          {/* Location */}
           <div className="border rounded-lg p-4 space-y-4">
             <label className="block font-semibold text-gray-700">
               Location:
             </label>
-
             <div>
               <label className="block mb-1 font-medium">District:</label>
               <select
@@ -136,7 +135,6 @@ export default function Profile() {
                 ))}
               </select>
             </div>
-
             <div>
               <label className="block mb-1 font-medium">Area:</label>
               <select
@@ -145,8 +143,8 @@ export default function Profile() {
                 onChange={(e) =>
                   setFormData({ ...formData, area: e.target.value })
                 }
-                required
                 disabled={!formData.district}
+                required
               >
                 <option value="">Select Area</option>
                 {formData.district &&
@@ -158,7 +156,7 @@ export default function Profile() {
               </select>
             </div>
           </div>
-
+          {/* Worker fields */}
           {user.role === "worker" && (
             <>
               <div>
@@ -179,7 +177,6 @@ export default function Profile() {
                   ))}
                 </select>
               </div>
-
               <div>
                 <label className="block font-medium mb-1">
                   Expected Rate (NPR):
@@ -196,11 +193,10 @@ export default function Profile() {
               </div>
             </>
           )}
-
           <div className="flex space-x-4 mt-4">
             <button
               type="submit"
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 transition"
+              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition"
             >
               Save
             </button>
@@ -245,7 +241,7 @@ export default function Profile() {
           )}
           <button
             onClick={() => setEditing(true)}
-            className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 transition"
+            className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition"
           >
             Edit Profile
           </button>

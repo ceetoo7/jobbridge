@@ -5,7 +5,7 @@ import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
-import PostGig from "./pages/postGig";
+import PostGig from "./pages/PostGig";
 import GigList from "./pages/GigList";
 import "./App.css";
 import Profile from "./pages/Profile";

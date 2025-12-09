@@ -59,17 +59,20 @@ export default function GigList() {
 
   if (loading)
     return <p className="text-center mt-10 text-gray-500">Loading gigs...</p>;
-
   return (
-    <div className="max-w-3xl mx-auto my-8 p-4">
-      {" "}
-      <h2 className="text-2xl font-bold mb-4 text-center">Available Gigs</h2>
+    <div className="max-w-6xl mx-auto my-12 p-6 bg-white rounded-2xl shadow-lg">
+      <h2 className="text-3xl font-bold mb-8 text-center text-primary">
+        Available Gigs
+      </h2>
+
       {/* Location Filters */}
-      <div className="flex gap-4 mb-6">
-        <div className="flex-1">
-          <label className="block mb-1 font-semibold">District:</label>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-8">
+        <div>
+          <label className="block mb-2 font-semibold text-secondary">
+            District:
+          </label>
           <select
-            className="w-full p-2 border rounded"
+            className="w-full px-4 py-2 border border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             value={district}
             onChange={(e) => {
               setDistrict(e.target.value);
@@ -85,10 +88,12 @@ export default function GigList() {
           </select>
         </div>
 
-        <div className="flex-1">
-          <label className="block mb-1 font-semibold">Area:</label>
+        <div>
+          <label className="block mb-2 font-semibold text-secondary">
+            Area:
+          </label>
           <select
-            className="w-full p-2 border rounded"
+            className="w-full px-4 py-2 border border-accent rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             value={area}
             onChange={(e) => setArea(e.target.value)}
             disabled={!district}
@@ -103,12 +108,13 @@ export default function GigList() {
           </select>
         </div>
       </div>
+
       {gigs.length === 0 ? (
-        <p className="text-center text-gray-500">
-          No gigs available for your location.
+        <p className="text-center text-highlight font-medium">
+          No gigs available for the selected location.
         </p>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {gigs.map((gig) => {
             const fair = getFairWage(gig.location, gig.skill);
             const exploitative = isExploitative(gig.offeredRate, fair);
@@ -117,33 +123,36 @@ export default function GigList() {
               <div
                 key={gig._id}
                 onClick={() => navigate(`/gigs/${gig._id}`)}
-                className={`p-4 rounded-xl shadow-md border-l-4 transition cursor-pointer bg-gray-50 hover:bg-gray-100 ${
+                className={`p-6 rounded-2xl shadow-md border-l-10 transition cursor-pointer bg-background hover:shadow-xl hover:bg-highlight ${
                   exploitative ? "border-red-500" : "border-green-500"
                 }`}
               >
-                <h3 className="text-lg font-semibold mb-1">{gig.title}</h3>
-                <p>
+                <h3 className="text-xl font-semibold mb-2 text-primary">
+                  {gig.title}
+                </h3>
+                <p className="text-gray-600 mb-1">{gig.description}</p>
+                <p className="text-gray-500 text-sm mb-1">
                   <strong>Employer:</strong> {gig.employer?.name || "Anonymous"}
                 </p>
-                <p>
+                <p className="text-gray-500 text-sm mb-1">
                   <strong>Skill:</strong> {gig.skill}
                 </p>
-                <p>
+                <p className="text-gray-500 text-sm mb-1">
                   <strong>Location:</strong>{" "}
                   {gig.location
                     ? `${gig.location.district}, ${gig.location.area}`
                     : "N/A"}
                 </p>
-                <p>
+                <p className="text-gray-500 text-sm mb-1">
                   <strong>Offered Rate:</strong> NPR{" "}
                   {Number(gig.offeredRate).toLocaleString()}
                 </p>
-                <p>
+                <p className="text-green-500 text-sm mb-2">
                   <strong>Fair Rate:</strong> NPR{" "}
                   {fair != null ? fair.toLocaleString() : "N/A"}
                 </p>
                 {exploitative && (
-                  <p className="text-red-500 mt-1 font-semibold">
+                  <p className="text-red-500 font-semibold text-sm">
                     ⚠️ Below 90% of fair wage
                   </p>
                 )}

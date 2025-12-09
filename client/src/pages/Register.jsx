@@ -88,7 +88,7 @@ export default function Register() {
       <div className="bg-white shadow-lg rounded-2xl w-full max-w-md p-8">
         <h2 className="text-2xl font-semibold text-center mb-6">
           Register as{" "}
-          <span className="text-blue-600">
+          <span className="text-primary">
             {role === "worker" ? "Worker" : "Employer"}
           </span>
         </h2>
@@ -97,7 +97,7 @@ export default function Register() {
         <select
           value={role}
           onChange={(e) => setRole(e.target.value)}
-          className="w-full border border-gray-300 rounded-lg p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-300 rounded-lg p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 "
         >
           <option value="worker">Worker</option>
           <option value="employer">Employer</option>
@@ -204,7 +204,7 @@ export default function Register() {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-all"
+            className="w-full bg-primary text-white py-2 rounded-lg hover:bg-highlight hover:text-primary transition-all"
           >
             Register
           </button>
@@ -213,7 +213,7 @@ export default function Register() {
             Already have an account?{" "}
             <span
               onClick={() => navigate("/login")}
-              className="text-blue-600 hover:underline cursor-pointer"
+              className="text-highlight hover:underline cursor-pointer"
             >
               Login
             </span>

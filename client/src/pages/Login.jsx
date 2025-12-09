@@ -62,7 +62,7 @@ export default function Login() {
             className={`w-full py-3 rounded-lg text-white transition-colors duration-200 ${
               loading
                 ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700"
+                : "bg-primary hover:bg-highlight hover:text-primary"
             }`}
           >
             {loading ? "Logging in..." : "Login"}
@@ -73,7 +73,7 @@ export default function Login() {
           Not a member?
           <button
             onClick={() => navigate("/register")}
-            className="text-blue-600 hover:underline ml-1"
+            className="text-highlight hover:underline ml-1"
           >
             Register here
           </button>

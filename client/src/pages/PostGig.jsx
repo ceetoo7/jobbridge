@@ -52,8 +52,8 @@ export default function PostGig() {
   };
 
   return (
-    <div className="max-w-lg mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-6">Post a Gig</h2>
+    <div className="max-w-3xl mx-auto mt-10 p-6 bg-background rounded-lg shadow-md">
+      <h2 className="text-2xl text-primary font-bold mb-6">Post a Gig</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
           type="text"
@@ -61,7 +61,7 @@ export default function PostGig() {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
-          className="w-full p-2 border border-gray-300 rounded"
+          className="w-full p-2 bg-white border border-gray-300 rounded"
         />
 
         <textarea
@@ -69,7 +69,7 @@ export default function PostGig() {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           required
-          className="w-full p-2 border border-gray-300 rounded h-24"
+          className="w-full p-2 bg-white border border-gray-300 rounded h-24"
         />
 
         {/* Skill Dropdown */}
@@ -77,7 +77,7 @@ export default function PostGig() {
           value={selectedSkill}
           onChange={(e) => setSelectedSkill(e.target.value)}
           required
-          className="w-full p-2 border border-gray-300 rounded"
+          className="w-full p-2 bg-white border border-gray-300 rounded"
         >
           <option value="">Select Skill</option>
           {SKILLS.map((skill) => (
@@ -95,7 +95,7 @@ export default function PostGig() {
             setSelectedArea("");
           }}
           required
-          className="w-full p-2 border border-gray-300 rounded"
+          className="w-full p-2 bg-white border border-gray-300 rounded"
         >
           <option value="">Select District</option>
           {Object.keys(LOCATIONS).map((district) => (
@@ -111,7 +111,7 @@ export default function PostGig() {
           onChange={(e) => setSelectedArea(e.target.value)}
           required
           disabled={!selectedDistrict}
-          className="w-full p-2 border border-gray-300 rounded disabled:bg-gray-100"
+          className="w-full p-2 bg-white border border-gray-300 rounded disabled:bg-gray-100"
         >
           <option value="">Select Area</option>
           {selectedDistrict &&
@@ -128,13 +128,13 @@ export default function PostGig() {
           value={offeredRate}
           onChange={(e) => setOfferedRate(e.target.value)}
           required
-          className="w-full p-2 border border-gray-300 rounded"
+          className="w-full p-2 bg-white border border-gray-300 rounded"
         />
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
+          className="w-full bg-primary text-white p-2 rounded hover:bg-highlight"
         >
           {loading ? "Posting..." : "Post Gig"}
         </button>
