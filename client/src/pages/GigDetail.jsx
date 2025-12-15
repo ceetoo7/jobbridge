@@ -111,11 +111,11 @@ export default function GigDetail() {
 
       {gig.isExploitative ? (
         <p className="text-red-600 font-semibold mb-4">
-          ⚠️ This gig is below fair wage.
+          This gig is below fair wage.
         </p>
       ) : (
         <p className="text-green-600 font-semibold mb-4">
-          ✅ This gig meets fair wage standards.
+          This gig meets fair wage standards.
         </p>
       )}
 

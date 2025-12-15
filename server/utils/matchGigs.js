@@ -1,5 +1,3 @@
-// server/utils/matchGigs.js
-
 export const matchGigs = (worker, gigs, threshold = 7.5) => {
     const normalize = str => str?.toString().trim().toLowerCase();
 

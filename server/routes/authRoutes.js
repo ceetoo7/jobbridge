@@ -1,4 +1,3 @@
-// server/routes/authRoutes.js
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
@@ -16,7 +15,7 @@ const processSkills = (skills) => {
     return [];
 };
 
-// POST /api/auth/register
+// register
 router.post('/register', async (req, res) => {
     try {
         const { name, phone, email, password, role = 'worker', location, skills, expectedRate } = req.body;

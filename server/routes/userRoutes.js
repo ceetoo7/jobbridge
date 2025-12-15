@@ -4,8 +4,8 @@ import { verifyToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// ✅ GET /api/users/me — get current user profile
-// Use imported verifyToken middleware
+// get current user profile
+
 router.get('/me', verifyToken, async (req, res) => {
     try {
         const user = await User.findById(req.user.id).select('-password');
@@ -17,14 +17,14 @@ router.get('/me', verifyToken, async (req, res) => {
     }
 });
 
-// ✅ PUT /api/users/me — update current user profile
+// update current user profile
 router.put('/me', verifyToken, async (req, res) => {
     const { name, location, skills, expectedRate } = req.body;
 
 try {
     const updates = { name, location, skills, expectedRate };
 
-    // Validate worker-specific fields
+    // validate worker-specific fields
     if (req.user.role === 'worker') {
         if (!location || !skills || expectedRate == null) {
             return res.status(400).json({ error: 'Worker must provide location, skills, and expectedRate' });
@@ -49,7 +49,7 @@ try {
 
 });
 
-// ✅ GET /api/users/workers — public list of workers
+// public list of workers
 router.get('/workers', async (req, res) => {
     try {
         const workers = await User.find({ role: 'worker' }, 'name location skills expectedRate');

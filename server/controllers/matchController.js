@@ -1,10 +1,9 @@
-// server/controllers/matchController.js
 import Gig from "../models/Gig.js";
 
 export const getMatchedGigs = async (req, res) => {
     try {
         const userId = req.user.id; // set by protect middleware
-        // Example logic: fetch gigs where user's skills match
+        //fetch gigs where user's skills match
         const userSkills = req.user.skills || [];
         const matchedGigs = await Gig.find({
             skills: { $in: userSkills },

@@ -19,7 +19,7 @@ const MatchedGigs = () => {
       }
 
       try {
-        // 1️⃣ Fetch worker profile
+        // Fetch worker profile
         const workerRes = await axios.get("/users/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -29,14 +29,14 @@ const MatchedGigs = () => {
           throw new Error("Worker profile not found");
         }
 
-        // 2️⃣ Fetch all gigs
+        // Fetch all gigs
         const gigsRes = await axios.get("/gigs", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         const allGigs = gigsRes.data;
 
-        // 3️⃣ Apply matching score logic
+        // Apply matching score logic
         const matched = allGigs.filter((gig) => {
           let score = 0;
 
@@ -128,7 +128,7 @@ const MatchedGigs = () => {
                   exploitative ? "text-red-500" : "text-green-500"
                 }`}
               >
-                {exploitative ? "Exploitative Rate ⚠️" : "Fair Rate ✅"} (
+                {exploitative ? "Low Rate" : "Fair Rate"} (
                 {fair ?? "N/A"})
               </p>
             </div>

@@ -5,7 +5,7 @@ import { verifyToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// POST /api/applications — Apply to a gig
+// Apply to a gig
 router.post('/', verifyToken, async (req, res) => {
     try {
         const { gigId } = req.body;
@@ -38,7 +38,7 @@ router.post('/', verifyToken, async (req, res) => {
     }
 });
 
-// GET /api/gigs/:gigId/applicants — View applicants (employer only)
+//  View applicants (employer only)
 router.get('/gigs/:gigId/applicants', verifyToken, async (req, res) => {
     try {
         const { gigId } = req.params;

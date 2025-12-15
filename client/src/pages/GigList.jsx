@@ -157,7 +157,7 @@ export default function GigList() {
                 </p>
                 {exploitative && (
                   <p className="text-red-500 font-semibold text-sm">
-                    ⚠️ Below 90% of fair wage
+                    Below 90% of fair wage
                   </p>
                 )}
               </div>

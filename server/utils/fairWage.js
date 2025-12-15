@@ -64,7 +64,7 @@ const FAIR_WAGE_TABLE = {
     },
 };
 
-// Returns the fair wage based on district (extract from multi-level location) and skill
+// returns the fair wage based on district (extract from multi-level location) and skill
 export function getFairWage(location, skill) {
     if (!location || !skill) return null;
 
@@ -79,7 +79,7 @@ export function getFairWage(location, skill) {
     return fair != null ? Number(fair) : null; // ensure it’s a number
 }
 
-// Returns true if offered wage is exploitative (<90% of fair wage)
+// returns true if offered wage is exploitative (<90% of fair wage)
 export function isExploitative(offered, fair, threshold = 0.9) {
     if (!offered || !fair) return false;
     return offered < fair * threshold;

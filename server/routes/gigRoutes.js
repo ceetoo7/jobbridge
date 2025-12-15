@@ -8,10 +8,7 @@ import Application from '../models/Application.js';
 
 const router = express.Router();
 
-/* --------------------------------------------
-   EMPLOYER → GET ALL MY GIGS
-   Must go BEFORE "/:id"
------------------------------------------------ */
+// employer - get all my gigs
 router.get("/mine", verifyToken, async (req, res) => {
     try {
         if (req.user.role !== "employer") {
@@ -34,37 +31,35 @@ router.get("/mine", verifyToken, async (req, res) => {
 });
 
 
-/* --------------------------------------------
-   PUBLIC → GET ALL GIGS
------------------------------------------------ */
+// get all gigs
 router.get("/", async (req, res) => {
     try {
         const gigs = await Gig.find().populate("employer", "name");
         res.status(200).json(gigs);
     } catch (error) {
-        console.error("🔥 Error fetching gigs:", error);
+        console.error("Error fetching gigs:", error);
         res.status(500).json({ message: "Error fetching gigs" });
     }
 });
 
-/* --------------------------------------------
-   PUBLIC → GET ONE GIG BY ID
------------------------------------------------ */
+
+
+// get one gig by id
 router.get("/:id", async (req, res) => {
     try {
         const gig = await Gig.findById(req.params.id).populate("employer", "name");
         if (!gig) {
-            console.log("❌ Gig not found for ID:", req.params.id);
+            console.log("Gig not found for ID:", req.params.id);
             return res.status(404).json({ message: "Gig not found" });
         }
         res.status(200).json(gig);
     } catch (error) {
-        console.error("🔥 Error fetching gig:", error);
+        console.error("Error fetching gig:", error);
         res.status(500).json({ message: "Error fetching gig" });
     }
 });
 
-// POST → EMPLOYER CREATES GIG
+// employer creates a gig
 router.post("/", verifyToken, async (req, res) => {
     try {
         if (req.user.role !== "employer") {
@@ -111,9 +106,8 @@ router.post("/", verifyToken, async (req, res) => {
 });
 
 
-/* --------------------------------------------
-   WORKER → APPLY TO A GIG
------------------------------------------------ */
+
+// worker - apply to a gig
 router.post("/:id/apply", verifyToken, async (req, res) => {
     try {
         const gig = await Gig.findById(req.params.id);
@@ -146,11 +140,9 @@ router.post("/:id/apply", verifyToken, async (req, res) => {
     }
 });
 
-/* --------------------------------------------
-   EMPLOYER → VIEW APPLICANTS
------------------------------------------------ */
 
-// GET applicants for a gig
+
+// employer view applicants
 router.get('/:gigId/applicants', verifyToken, async (req, res) => {
     try {
         const applications = await Application.find({ gig: req.params.gigId })
@@ -166,10 +158,7 @@ router.get('/:gigId/applicants', verifyToken, async (req, res) => {
 
 
 
-
-/* --------------------------------------------
-   EMPLOYER → EDIT GIG
------------------------------------------------ */
+// employer - edit gig
 router.put("/:id", verifyToken, async (req, res) => {
     try {
         const gig = await Gig.findById(req.params.id);
@@ -191,9 +180,9 @@ router.put("/:id", verifyToken, async (req, res) => {
     }
 });
 
-/* --------------------------------------------
-   EMPLOYER → DELETE GIG
------------------------------------------------ */
+
+
+// employer - delete gig
 router.delete("/:id", verifyToken, async (req, res) => {
     try {
         const gig = await Gig.findById(req.params.id);

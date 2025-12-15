@@ -33,8 +33,7 @@ export default function PostGig() {
           title,
           description,
 
-          // 🔥 IMPORTANT FIXES
-          skills: [selectedSkill], // ARRAY ✅
+          skills: [selectedSkill],
           location: {
             district: selectedDistrict,
             area: selectedArea,
@@ -51,7 +50,7 @@ export default function PostGig() {
         return alert(data.error || "Failed to post gig");
       }
 
-      alert("✅ Gig posted");
+      alert("Gig posted");
       navigate("/gigs");
     } catch (err) {
       alert("Network error");
