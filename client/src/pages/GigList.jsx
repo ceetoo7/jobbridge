@@ -1,3 +1,4 @@
+// GigList.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getFairWage, isExploitative } from "../utils/fairWage.js";
@@ -59,6 +60,7 @@ export default function GigList() {
 
   if (loading)
     return <p className="text-center mt-10 text-gray-500">Loading gigs...</p>;
+
   return (
     <div className="max-w-6xl mx-auto my-12 p-6 bg-white rounded-2xl shadow-lg">
       <h2 className="text-3xl font-bold mb-8 text-center text-primary">
@@ -116,7 +118,9 @@ export default function GigList() {
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {gigs.map((gig) => {
-            const fair = getFairWage(gig.location, gig.skill);
+            // Use first skill in array for fair wage calculation
+            const skill = gig.skills?.[0] || "Unknown";
+            const fair = getFairWage(gig.location, skill);
             const exploitative = isExploitative(gig.offeredRate, fair);
 
             return (
@@ -135,7 +139,7 @@ export default function GigList() {
                   <strong>Employer:</strong> {gig.employer?.name || "Anonymous"}
                 </p>
                 <p className="text-gray-500 text-sm mb-1">
-                  <strong>Skill:</strong> {gig.skill}
+                  <strong>Skill:</strong> {gig.skills?.join(", ") || "N/A"}
                 </p>
                 <p className="text-gray-500 text-sm mb-1">
                   <strong>Location:</strong>{" "}

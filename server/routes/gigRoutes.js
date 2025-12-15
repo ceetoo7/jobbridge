@@ -64,40 +64,52 @@ router.get("/:id", async (req, res) => {
     }
 });
 
-/* --------------------------------------------
-   POST → EMPLOYER CREATES GIG
------------------------------------------------ */
+// POST → EMPLOYER CREATES GIG
 router.post("/", verifyToken, async (req, res) => {
     try {
-        const { title, description, skill, location, offeredRate } = req.body;
-
         if (req.user.role !== "employer") {
             return res.status(403).json({ error: "Only employers can post gigs" });
         }
 
-        const fairRate = getFairWage(location, skill);
-        if (!fairRate) {
-            return res.status(400).json({ error: "Invalid location or skill" });
+        const { title, description, skills, location, offeredRate } = req.body;
+
+        // Validate payload
+        if (
+            !title ||
+            !description ||
+            !Array.isArray(skills) || skills.length === 0 ||
+            !location?.district || !location?.area ||
+            !offeredRate
+        ) {
+            return res.status(400).json({ error: "Invalid location or skills" });
         }
 
-        const gig = new Gig({
+        // Fair rate & exploitative
+        const fairRate = getFairWage(location, skills[0]);
+        const exploitative = isExploitative(offeredRate, fairRate);
+
+        const gig = await Gig.create({
             employer: req.user.id,
             title,
             description,
-            skill,
-            location,
+            skills, // array of strings
+            location: {
+                district: location.district,
+                area: location.area
+            },
             offeredRate: Number(offeredRate),
             fairRate,
-            isExploitative: isExploitative(Number(offeredRate), fairRate),
+            isExploitative: exploitative
         });
 
-        await gig.save();
         res.status(201).json(gig);
+
     } catch (err) {
         console.error("🔥 Error creating gig:", err);
-        res.status(500).json({ error: err.message });
+        res.status(500).json({ error: "Server error" });
     }
 });
+
 
 /* --------------------------------------------
    WORKER → APPLY TO A GIG

@@ -1,3 +1,4 @@
+// MatchedGigs.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../api/axios";
@@ -18,14 +19,49 @@ const MatchedGigs = () => {
       }
 
       try {
-        const response = await axios.get("/match/gigs", {
+        // 1️⃣ Fetch worker profile
+        const workerRes = await axios.get("/users/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        setGigs(response.data);
+        const worker = workerRes.data;
+        if (!worker || !worker.skills || !worker.location) {
+          throw new Error("Worker profile not found");
+        }
+
+        // 2️⃣ Fetch all gigs
+        const gigsRes = await axios.get("/gigs", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const allGigs = gigsRes.data;
+
+        // 3️⃣ Apply matching score logic
+        const matched = allGigs.filter((gig) => {
+          let score = 0;
+
+          // Skill match (5 points)
+          const skillMatch = gig.skills?.some((s) => worker.skills.includes(s));
+          if (skillMatch) score += 5;
+          else return false; // Must match skill, otherwise reject
+
+          // Location match (2.5 points)
+          const locMatch =
+            gig.location?.district === worker.location.district ||
+            gig.location?.area === worker.location.area;
+          if (locMatch) score += 2.5;
+
+          // Wage match (2.5 points)
+          const wageMatch = gig.offeredRate >= worker.expectedRate;
+          if (wageMatch) score += 2.5;
+
+          return score >= 7.5;
+        });
+
+        setGigs(matched);
       } catch (err) {
         console.error("Failed to fetch matched gigs:", err);
-        setError("Failed to load gigs. Try again later.");
+        setError(err.message || "Failed to load gigs. Try again later.");
       } finally {
         setLoading(false);
       }
@@ -45,16 +81,17 @@ const MatchedGigs = () => {
       </h1>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {gigs.map((gig) => {
-          const fair = getFairWage(gig.location, gig.skill);
+          const skillForFair = gig.skills?.[0] || "Unknown";
+          const fair = getFairWage(gig.location, skillForFair);
           const offered = Number(gig.offeredRate);
           const exploitative = isExploitative(offered, fair, 0.95);
 
           const locationStr =
-            typeof gig.location === "string"
-              ? gig.location
-              : `${gig.location.district || "Unknown District"}, ${
+            gig.location && gig.location.district
+              ? `${gig.location.district}, ${
                   gig.location.area || "Unknown Area"
-                }`;
+                }`
+              : "Unknown Location";
 
           return (
             <div
@@ -69,19 +106,21 @@ const MatchedGigs = () => {
               </h2>
               <p className="text-gray-700 mb-2">{gig.description}</p>
               <p className="text-gray-500 text-sm mb-1">
-                Skill:{" "}
-                <span className="font-medium text-secondary">{gig.skill}</span>
+                <strong>Skills:</strong>{" "}
+                <span className="font-medium text-secondary">
+                  {gig.skills?.join(", ") || "N/A"}
+                </span>
               </p>
               <p className="text-gray-500 text-sm mb-1">
-                Location:{" "}
+                <strong>Location:</strong>{" "}
                 <span className="font-medium text-secondary">
                   {locationStr}
                 </span>
               </p>
               <p className="text-gray-500 text-sm mb-1">
-                Offered Rate:{" "}
+                <strong>Offered Rate:</strong>{" "}
                 <span className="font-medium text-secondary">
-                  NPR {offered}
+                  NPR {offered.toLocaleString()}
                 </span>
               </p>
               <p
@@ -99,4 +138,5 @@ const MatchedGigs = () => {
     </div>
   );
 };
+
 export default MatchedGigs;

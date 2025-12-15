@@ -8,40 +8,55 @@ const GigSchema = new mongoose.Schema(
             required: true,
         },
 
-        title: { type: String, required: true },
-        description: { type: String },
+        title: {
+            type: String,
+            required: true,
+        },
 
-        // FIXED: location should match what you're saving
+        description: {
+            type: String,
+            required: true,
+        },
+
+        // ✅ LOCATION OBJECT
         location: {
             district: { type: String, required: true },
             area: { type: String, required: true },
-        },  
+        },
 
+        // ✅ SKILLS ARRAY
+        skills: {
+            type: [String],
+            required: true,
+        },
 
-        // FIXED: skill (single), since you use req.body.skill when creating gigs
-skills: [{ type: String, required: true }],
-
-        offeredRate: { type: Number, required: true },
+        offeredRate: {
+            type: Number,
+            required: true,
+        },
 
         fairRate: Number,
         isExploitative: Boolean,
 
-        // applicant IDs
         applicants: [
             {
                 user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-                status: { type: String, enum: ["pending", "accepted", "rejected"], default: "pending" }
-            }
-        ], acceptedApplicants: [
+                status: {
+                    type: String,
+                    enum: ["pending", "accepted", "rejected"],
+                    default: "pending",
+                },
+            },
+        ],
+
+        acceptedApplicants: [
             {
                 type: mongoose.Schema.Types.ObjectId,
-                ref: "User"
-
-            }
+                ref: "User",
+            },
         ],
     },
     { timestamps: true }
 );
 
-const Gig = mongoose.model("Gig", GigSchema);
-export default Gig;
+export default mongoose.model("Gig", GigSchema);
