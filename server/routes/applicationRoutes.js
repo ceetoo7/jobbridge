@@ -59,4 +59,23 @@ router.get('/gigs/:gigId/applicants', verifyToken, async (req, res) => {
     }
 });
 
+router.get("/my/:gigId", verifyToken, async (req, res) => {
+    try {
+        if (req.user.role !== "worker") {
+            return res.status(403).json({ error: "Only workers can access this" });
+        }
+
+        const application = await Application.findOne({
+            gig: req.params.gigId,
+            worker: req.user.id,
+        }).populate("gig").lean();
+
+        if (!application) return res.json(null); // not applied yet
+        res.json(application);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Server error" });
+    }
+});
+
 export default router;

@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 
 const UserSchema = new mongoose.Schema({
     name: { type: String, required: true },
-    email: { type: String, required: true, unique: true }, // switch to email as unique identifier
+    email: { type: String, required: true, unique: true },
     phone: { type: String, required: true },
     password: { type: String, required: true },
     role: { type: String, enum: ['worker', 'employer'], default: 'worker' },
@@ -12,7 +12,10 @@ const UserSchema = new mongoose.Schema({
         area: { type: String },
     },
     skills: { type: [String], required: function () { return this.role === 'worker'; } },
-    expectedRate: { type: Number }
+    expectedRate: { type: Number },
+    ratingAverage: { type: Number, default: 0 },
+    ratingCount: { type: Number, default: 0 }
+
 }, { timestamps: true });
 
 UserSchema.pre('save', async function (next) {

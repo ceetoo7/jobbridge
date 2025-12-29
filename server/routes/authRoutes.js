@@ -4,8 +4,6 @@ import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
 
 const router = express.Router();
-
-// Helper: process skills safely
 const processSkills = (skills) => {
     if (Array.isArray(skills)) {
         return skills.filter(s => typeof s === 'string' && s.trim() !== '');

@@ -6,43 +6,51 @@ import { getFairWage } from "../utils/fairWage";
 export default function GigDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+
   const [gig, setGig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
   const [applied, setApplied] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [review, setReview] = useState(""); // optional review
+  const [submittingRating, setSubmittingRating] = useState(false);
+  const [ratingSubmitted, setRatingSubmitted] = useState(false);
 
   useEffect(() => {
     const fetchGig = async () => {
-      const token = localStorage.getItem("token");
-
       try {
-        const res = await fetch(`http://localhost:5001/api/gigs/${id}`, {
+        const token = localStorage.getItem("token");
+        const res = await axiosInstance.get(`/gigs/${id}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
 
-        if (res.status === 401) {
-          console.warn("Unauthorized — redirecting to login");
-          navigate("/login");
-          return;
-        }
+        const data = res.data;
 
-        if (!res.ok) throw new Error("Failed to load gig");
+        const firstSkill = data.skills?.[0] || "Unknown";
+        const fair = getFairWage(data.location, firstSkill);
+        const isExploitative = data.offeredRate < fair * 0.95;
 
-        const data = await res.json();
-
-        // compute fair wage & exploitative flag
-        const fair = getFairWage(data.location, data.skill);
-        const isExploitative = data.offeredRate < fair * 0.95; // 95% threshold
         setGig({ ...data, fairRate: fair, isExploitative });
+
+        // check if worker already applied
+        setApplied(data.application ? true : false);
+
+        // prefill rating if already exists
+        if (data.application?.workerRating) {
+          setRating(data.application.workerRating.stars || 0);
+          setReview(data.application.workerRating.review || "");
+          setRatingSubmitted(true); // hide form if already rated
+        }
       } catch (err) {
         console.error("Fetch gig error:", err);
+        alert("Failed to load gig. Try again later.");
       } finally {
         setLoading(false);
       }
     };
 
     fetchGig();
-  }, [id, navigate]);
+  }, [id]);
 
   const handleApply = async () => {
     const token = localStorage.getItem("token");
@@ -53,14 +61,11 @@ export default function GigDetail() {
     }
 
     setApplying(true);
-
     try {
       const res = await axiosInstance.post(
         `/gigs/${id}/apply`,
         {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (res.status === 200 || res.status === 201) {
@@ -70,10 +75,52 @@ export default function GigDetail() {
         alert(res.data.error || "Failed to apply.");
       }
     } catch (err) {
-      alert(err.response?.data?.error || "Network error while applying.");
       console.error(err);
+      alert(err.response?.data?.error || "Network error while applying.");
     } finally {
       setApplying(false);
+    }
+  };
+
+  const handleSubmitRating = async () => {
+    if (rating < 1 || rating > 5) {
+      alert("Please select a rating from 1 to 5.");
+      return;
+    }
+
+    if (!gig.application?._id) {
+      alert("Application ID missing. Cannot submit rating.");
+      return;
+    }
+
+    setSubmittingRating(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axiosInstance.post(
+        `/gigs/${id}/applicants/${gig.application._id}/rate-employer`,
+        { stars: rating, review },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (res.status === 200) {
+        alert("Rating submitted successfully!");
+        setRatingSubmitted(true);
+        // Update gig state so it shows submitted rating
+        setGig({
+          ...gig,
+          application: {
+            ...gig.application,
+            workerRating: { stars: rating, review },
+          },
+        });
+      } else {
+        alert("Failed to submit rating.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || "Network error submitting rating.");
+    } finally {
+      setSubmittingRating(false);
     }
   };
 
@@ -94,7 +141,7 @@ export default function GigDetail() {
         <strong>Employer:</strong> {gig.employer?.name || "Anonymous"}
       </p>
       <p className="text-gray-700 mb-2">
-        <strong>Skill:</strong> {gig.skill}
+        <strong>Skills:</strong> {gig.skills?.join(", ") || "N/A"}
       </p>
       <p className="text-gray-700 mb-2">
         <strong>Location:</strong>{" "}
@@ -106,7 +153,8 @@ export default function GigDetail() {
         <strong>Offered Rate:</strong> NPR {gig.offeredRate.toLocaleString()}
       </p>
       <p className="text-gray-700 mb-4">
-        <strong>Fair Rate:</strong> NPR {gig.fairRate?.toLocaleString()}
+        <strong>Fair Rate:</strong> NPR{" "}
+        {gig.fairRate?.toLocaleString() || "N/A"}
       </p>
 
       {gig.isExploitative ? (
@@ -121,7 +169,7 @@ export default function GigDetail() {
 
       <p className="text-gray-700 mb-6">{gig.description}</p>
 
-      <div className="flex flex-wrap gap-4">
+      <div className="flex flex-wrap gap-4 mb-6">
         <button
           onClick={() => navigate(-1)}
           className="bg-[#489FB5] hover:bg-[#16697A] text-white px-5 py-2 rounded-lg transition"
@@ -142,11 +190,66 @@ export default function GigDetail() {
         )}
 
         {isWorker && applied && (
-          <span className="text-green-700 font-semibold self-center">
-            Applied ✔️
+          <span className="inline-flex items-center px-3 py-1 rounded-full bg-green-200 text-green-800 border border-green-400 font-medium border-2">
+            Applied
           </span>
         )}
       </div>
+
+      {/* Worker rating UI */}
+      {isWorker && applied && !ratingSubmitted && (
+        <div className="mt-4">
+          <p className="text-gray-700 font-semibold mb-2">
+            Rate this employer:
+          </p>
+          <div className="flex items-center gap-2 mb-2">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                onClick={() => setRating(star)}
+                className={`inline-flex items-center px-3 py-1 rounded-lg border-2 text-sm font-medium transition ${
+                  rating >= star
+                    ? "bg-yellow-400 text-white border-yellow-500"
+                    : "bg-gray-200 text-gray-700 border-gray-300"
+                }`}
+              >
+                {star} ★
+              </button>
+            ))}
+          </div>
+
+          <textarea
+            placeholder="Optional review (can leave empty)"
+            value={review}
+            onChange={(e) => setReview(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg p-3 mb-2 resize-none focus:outline-none focus:ring-2 focus:ring-[#16697A]"
+          />
+
+          <button
+            onClick={handleSubmitRating}
+            disabled={submittingRating}
+            className="bg-[#16697A] hover:bg-[#0F5DD2] text-white px-5 py-2 rounded-lg transition"
+          >
+            {submittingRating ? "Submitting..." : "Submit Rating"}
+          </button>
+        </div>
+      )}
+
+      {/* Display submitted rating */}
+      {isWorker &&
+        applied &&
+        ratingSubmitted &&
+        gig.application?.workerRating && (
+          <div className="mt-4 p-4 bg-green-100 rounded-lg">
+            <p className="font-semibold mb-1">Your rating:</p>
+            <p>{gig.application.workerRating.stars} ★</p>
+            {gig.application.workerRating.review && (
+              <p className="mt-1 text-gray-700">
+                "{gig.application.workerRating.review}"
+              </p>
+            )}
+          </div>
+        )}
     </div>
   );
 }

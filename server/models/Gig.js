@@ -18,13 +18,11 @@ const GigSchema = new mongoose.Schema(
             required: true,
         },
 
-        // ✅ LOCATION OBJECT
         location: {
             district: { type: String, required: true },
             area: { type: String, required: true },
         },
 
-        // ✅ SKILLS ARRAY
         skills: {
             type: [String],
             required: true,

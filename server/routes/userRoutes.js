@@ -5,7 +5,6 @@ import { verifyToken } from '../middleware/auth.js';
 const router = express.Router();
 
 // get current user profile
-
 router.get('/me', verifyToken, async (req, res) => {
     try {
         const user = await User.findById(req.user.id).select('-password');
@@ -21,30 +20,30 @@ router.get('/me', verifyToken, async (req, res) => {
 router.put('/me', verifyToken, async (req, res) => {
     const { name, location, skills, expectedRate } = req.body;
 
-try {
-    const updates = { name, location, skills, expectedRate };
+    try {
+        const updates = { name, location, skills, expectedRate };
 
-    // validate worker-specific fields
-    if (req.user.role === 'worker') {
-        if (!location || !skills || expectedRate == null) {
-            return res.status(400).json({ error: 'Worker must provide location, skills, and expectedRate' });
+        // validate worker-specific fields
+        if (req.user.role === 'worker') {
+            if (!location || !skills || expectedRate == null) {
+                return res.status(400).json({ error: 'Worker must provide location, skills, and expectedRate' });
+            }
         }
-    }
 
-    const updatedUser = await User.findByIdAndUpdate(
-        req.user.id,
-        updates,
-        { new: true, runValidators: true, select: '-password' }
-    );
+        const updatedUser = await User.findByIdAndUpdate(
+            req.user.id,
+            updates,
+            { new: true, runValidators: true, select: '-password' }
+        );
 
-    res.json(updatedUser);
-} catch (err) {
-    console.error('Update error:', err);
-    if (err.name === 'ValidationError') {
-        return res.status(400).json({ error: Object.values(err.errors).map(e => e.message).join(', ') });
+        res.json(updatedUser);
+    } catch (err) {
+        console.error('Update error:', err);
+        if (err.name === 'ValidationError') {
+            return res.status(400).json({ error: Object.values(err.errors).map(e => e.message).join(', ') });
+        }
+        res.status(500).json({ error: 'Failed to update profile' });
     }
-    res.status(500).json({ error: 'Failed to update profile' });
-}
 
 
 });

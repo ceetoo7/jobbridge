@@ -5,7 +5,6 @@ import { getFairWage, isExploitative } from "../utils/fairWage.js";
 import { verifyToken } from "../middleware/auth.js";
 import Application from '../models/Application.js';
 
-
 const router = express.Router();
 
 // employer - get all my gigs
@@ -45,19 +44,30 @@ router.get("/", async (req, res) => {
 
 
 // get one gig by id
-router.get("/:id", async (req, res) => {
+router.get("/:id", verifyToken, async (req, res) => {
     try {
         const gig = await Gig.findById(req.params.id).populate("employer", "name");
-        if (!gig) {
-            console.log("Gig not found for ID:", req.params.id);
-            return res.status(404).json({ message: "Gig not found" });
+        if (!gig) return res.status(404).json({ message: "Gig not found" });
+
+        // include application for the logged-in worker if exists
+        let application = null;
+        if (req.user.role === "worker") {
+            application = await Application.findOne({
+                gig: gig._id,
+                worker: req.user.id,
+            });
         }
-        res.status(200).json(gig);
+
+        res.status(200).json({
+            ...gig.toObject(),
+            application, // this will be null if not applied
+        });
     } catch (error) {
         console.error("Error fetching gig:", error);
         res.status(500).json({ message: "Error fetching gig" });
     }
 });
+
 
 // employer creates a gig
 router.post("/", verifyToken, async (req, res) => {
@@ -229,6 +239,129 @@ router.post('/:gigId/applicants/:appId/reject', verifyToken, async (req, res) =>
         res.status(500).json({ message: 'Server error rejecting applicant' });
     }
 });
+
+// APPLY FOR GIG
+router.post("/:gigId/apply", verifyToken, async (req, res) => {
+    try {
+        const gig = await Gig.findById(req.params.gigId);
+        if (!gig) return res.status(404).json({ error: "Gig not found" });
+
+        const alreadyApplied = await Application.findOne({
+            gig: gig._id,
+            worker: req.user.id,
+        });
+        if (alreadyApplied)
+            return res.status(400).json({ error: "Already applied" });
+
+        const application = new Application({
+            gig: gig._id,
+            worker: req.user.id,
+            status: "pending",
+        });
+        await application.save();
+
+        gig.applications.push(application._id);
+        await gig.save();
+
+        res.status(201).json({ message: "Applied successfully", application });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// EMPLOYER MARK COMPLETED
+router.post("/:gigId/applicants/:appId/complete", verifyToken, async (req, res) => {
+    try {
+        const application = await Application.findById(req.params.appId);
+        if (!application) return res.status(404).json({ error: "Application not found" });
+
+        application.status = "completed";
+        await application.save();
+
+        res.json({ message: "Marked completed" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// WORKER RATES EMPLOYER
+router.post("/:gigId/applicants/:applicationId/rate-employer", async (req, res) => {
+    const { applicationId } = req.params;
+    const { stars, review } = req.body;
+
+    if (!stars || stars < 1 || stars > 5) {
+        return res.status(400).json({ error: "Stars must be between 1 and 5" });
+    }
+
+    try {
+        const application = await Application.findById(applicationId);
+        if (!application) return res.status(404).json({ error: "Application not found" });
+
+        application.ratingEmployer = { stars, review };
+        await application.save();
+
+        res.json({ message: "Employer rating submitted successfully", application });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Failed to submit rating" });
+    }
+});
+
+// EMPLOYER RATES WORKER
+router.post("/:gigId/applicants/:applicationId/rate-worker", async (req, res) => {
+    const { applicationId } = req.params;
+    const { stars, review } = req.body;
+
+    if (!stars || stars < 1 || stars > 5) {
+        return res.status(400).json({ error: "Stars must be between 1 and 5" });
+    }
+
+    try {
+        const application = await Application.findById(applicationId);
+        if (!application) return res.status(404).json({ error: "Application not found" });
+
+        application.ratingWorker = { stars, review };
+        await application.save();
+
+        res.json({ message: "Worker rating submitted successfully", application });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Failed to submit rating" });
+    }
+});
+
+router.get("/users/:userId/applications", async (req, res) => {
+    const { userId } = req.params;
+
+    try {
+        const applications = await Application.find({
+            $or: [{ worker: userId }, { gigOwner: userId }],
+        });
+
+        res.json(applications);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Failed to fetch applications" });
+    }
+});
+
+// GET GIG WITH APPLICATIONS
+router.get("/:gigId", verifyToken, async (req, res) => {
+    try {
+        const gig = await Gig.findById(req.params.gigId)
+            .populate("applications")
+            .populate({ path: "applications", populate: "worker" })
+            .populate("employer");
+        if (!gig) return res.status(404).json({ error: "Gig not found" });
+
+        res.json(gig);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
+
 
 
 
