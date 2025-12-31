@@ -129,7 +129,8 @@ const MatchedGigs = () => {
                 </p>
 
                 <p className="text-sm text-gray-500">
-                  <strong>Offered Rate:</strong> NPR {offered.toLocaleString()}
+                  <strong>Offered Rate:</strong> NPR {offered.toLocaleString()}{" "}
+                  /day
                 </p>
 
                 <p
@@ -137,12 +138,13 @@ const MatchedGigs = () => {
                     exploitative ? "text-red-500" : "text-green-500"
                   }`}
                 >
-                  {exploitative ? "Low Rate" : "Fair Rate"} ({fair ?? "N/A"})
+                  {exploitative ? "Fair Rate" : "Fair Rate"} {fair ?? "N/A"}{" "}
+                  /day
                 </p>
               </div>
 
               {/* ⭐ WORKER → EMPLOYER RATING */}
-              {canRate && (
+              {/* {canRate && (
                 <div className="mt-4 border-t pt-3">
                   <p className="text-sm font-semibold mb-2">Rate Employer</p>
 
@@ -158,13 +160,13 @@ const MatchedGigs = () => {
                     ))}
                   </div>
                 </div>
-              )}
+              )} */}
 
-              {gig.workerRating && (
+              {/* {gig.workerRating && (
                 <p className="mt-3 text-sm text-green-600">
                   You rated this employer ⭐ {gig.workerRating}
                 </p>
-              )}
+              )} */}
             </div>
           );
         })}

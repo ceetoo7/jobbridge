@@ -151,11 +151,12 @@ export default function GigDetail() {
           : `${gig.location.area} - ${gig.location.district}`}
       </p>
       <p className="text-gray-700 mb-2">
-        <strong>Offered Rate:</strong> NPR {gig.offeredRate.toLocaleString()}
+        <strong>Offered Rate:</strong> NPR {gig.offeredRate.toLocaleString()}{" "}
+        /day
       </p>
       <p className="text-gray-700 mb-4">
         <strong>Fair Rate:</strong> NPR{" "}
-        {gig.fairRate?.toLocaleString() || "N/A"}
+        {gig.fairRate?.toLocaleString() || "N/A"} /day
       </p>
 
       {gig.isExploitative ? (

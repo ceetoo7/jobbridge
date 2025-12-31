@@ -8,6 +8,9 @@ export default function Profile() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [averageRating, setAverageRating] = useState(null);
+
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -16,10 +19,12 @@ export default function Profile() {
     skill: "",
     expectedRate: "",
   });
+
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProfile = async () => {
+      setLoading(true);
       try {
         const res = await axiosInstance.get("/users/me");
         const data = res.data;
@@ -32,15 +37,43 @@ export default function Profile() {
           skill: Array.isArray(data.skills) ? data.skills[0] || "" : "",
           expectedRate: data.expectedRate || "",
         });
+
+        if (data.role === "worker" && data._id) {
+          try {
+            const histRes = await axiosInstance.get(
+              `/gigs/applications/completed/worker/${data._id}`
+            );
+            const jobs = histRes.data || [];
+            setHistory(jobs);
+
+            // average rating by employer
+            const ratings = jobs
+              .map((j) => j.ratingEmployer?.stars)
+              .filter(Boolean);
+            const avg = ratings.length
+              ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)
+              : null;
+            setAverageRating(avg);
+          } catch (err) {
+            console.warn("Failed to fetch job history:", err.message);
+            setHistory([]);
+            setAverageRating(null);
+          }
+        }
       } catch (err) {
         console.error("Failed to load profile:", err);
-        alert("Please log in again.");
-        localStorage.removeItem("token");
-        navigate("/login");
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          alert("Session expired. Please log in again.");
+          localStorage.removeItem("token");
+          navigate("/login");
+        } else {
+          alert("Error loading profile. Try refreshing.");
+        }
       } finally {
         setLoading(false);
       }
     };
+
     fetchProfile();
   }, [navigate]);
 
@@ -55,9 +88,10 @@ export default function Profile() {
         },
       };
       if (user?.role === "worker") {
-        payload.skills = [formData.skill]; // single skill as array
+        payload.skills = [formData.skill];
         payload.expectedRate = Number(formData.expectedRate);
       }
+
       const res = await axiosInstance.put("/users/me", payload);
       setUser(res.data);
       setFormData({
@@ -83,9 +117,10 @@ export default function Profile() {
       <h2 className="text-2xl font-bold mb-6 text-gray-800">
         {editing ? "Edit Profile" : "My Profile"}
       </h2>
+
+      {/* Edit Form */}
       {editing ? (
         <form className="space-y-4" onSubmit={handleSave}>
-          {/* Name */}
           <div>
             <label className="block font-medium mb-1">Name:</label>
             <input
@@ -98,7 +133,6 @@ export default function Profile() {
               required
             />
           </div>
-          {/* Phone */}
           <div>
             <label className="block font-medium mb-1">Phone:</label>
             <input
@@ -108,7 +142,7 @@ export default function Profile() {
               readOnly
             />
           </div>
-          {/* Location */}
+
           <div className="border rounded-lg p-4 space-y-4">
             <label className="block font-semibold text-gray-700">
               Location:
@@ -156,7 +190,7 @@ export default function Profile() {
               </select>
             </div>
           </div>
-          {/* Worker fields */}
+
           {user.role === "worker" && (
             <>
               <div>
@@ -193,6 +227,7 @@ export default function Profile() {
               </div>
             </>
           )}
+
           <div className="flex space-x-4 mt-4">
             <button
               type="submit"
@@ -210,42 +245,85 @@ export default function Profile() {
           </div>
         </form>
       ) : (
-        <div className="space-y-3 text-gray-700">
-          <p>
-            <span className="font-semibold">Name:</span> {user.name}
-          </p>
-          <p>
-            <span className="font-semibold">Phone:</span> {user.phone}
-          </p>
-          <p>
-            <span className="font-semibold">Location:</span>{" "}
-            {user.location
-              ? `${user.location.district}, ${user.location.area}`
-              : "Not set"}
-          </p>
-          <p>
-            <span className="font-semibold">Role:</span>{" "}
-            {user.role === "worker" ? "Worker" : "Employer"}
-          </p>
+        <>
+          {/* Profile Info */}
+          <div className="space-y-3 text-gray-700">
+            <p>
+              <span className="font-semibold">Name:</span> {user.name}
+            </p>
+            <p>
+              <span className="font-semibold">Phone:</span> {user.phone}
+            </p>
+            <p>
+              <span className="font-semibold">Location:</span>{" "}
+              {user.location
+                ? `${user.location.district}, ${user.location.area}`
+                : "Not set"}
+            </p>
+            <p>
+              <span className="font-semibold">Role:</span>{" "}
+              {user.role === "worker" ? "Worker" : "Employer"}
+            </p>
+            {user.role === "worker" && (
+              <>
+                <p>
+                  <span className="font-semibold">Skill:</span>{" "}
+                  {Array.isArray(user.skills) ? user.skills[0] : ""}
+                </p>
+                <p>
+                  <span className="font-semibold">Expected Rate:</span> NPR{" "}
+                  {user.expectedRate}/perday
+                </p>
+              </>
+            )}
+            <button
+              onClick={() => setEditing(true)}
+              className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition"
+            >
+              Edit Profile
+            </button>
+          </div>
+
+          {/* Worker Completed Jobs */}
           {user.role === "worker" && (
-            <>
-              <p>
-                <span className="font-semibold">Skill:</span>{" "}
-                {Array.isArray(user.skills) ? user.skills[0] : ""}
+            <div className="mt-8">
+              <h3 className="text-xl font-bold mb-3 text-gray-800">
+                Completed Jobs
+              </h3>
+              <p className="mb-2">
+                Total Completed: {history.length} | Average Rating:{" "}
+                {averageRating || "-"}
               </p>
-              <p>
-                <span className="font-semibold">Expected Rate:</span> NPR{" "}
-                {user.expectedRate}
-              </p>
-            </>
+              <div className="space-y-4">
+                {history.length > 0 ? (
+                  history.map((job) => (
+                    <div
+                      key={job._id}
+                      className="border p-4 rounded-lg shadow-sm bg-gray-50"
+                    >
+                      <p className="font-semibold">{job.gig?.title}</p>
+                      <p>
+                        Location: {job.gig?.location?.district},{" "}
+                        {job.gig?.location?.area}
+                      </p>
+                      <p>Offered Rate: NPR {job.gig?.offeredRate}/perday</p>
+                      <p>Employer: {job.gig?.employer?.name || "-"}</p>
+                      {job.ratingEmployer && (
+                        <p>
+                          Rating: {job.ratingWorker.stars} ★{" "}
+                          {job.ratingWorker.review &&
+                            `- "${job.ratingWorker.review}"`}
+                        </p>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <p>No completed jobs yet.</p>
+                )}
+              </div>
+            </div>
           )}
-          <button
-            onClick={() => setEditing(true)}
-            className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-secondary transition"
-          >
-            Edit Profile
-          </button>
-        </div>
+        </>
       )}
     </div>
   );
