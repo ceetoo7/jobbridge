@@ -36,10 +36,10 @@ export default function GigDetail() {
         setApplied(data.application ? true : false);
 
         // prefill rating if already exists
-        if (data.application?.workerRating) {
-          setRating(data.application.workerRating.stars || 0);
-          setReview(data.application.workerRating.review || "");
-          setRatingSubmitted(true); // hide form if already rated
+        if (data.application?.ratingEmployer?.stars) {
+          setRating(data.application.ratingEmployer.stars);
+          setReview(data.application.ratingEmployer.review || "");
+          setRatingSubmitted(true);
         }
       } catch (err) {
         console.error("Fetch gig error:", err);
@@ -132,6 +132,7 @@ export default function GigDetail() {
   const token = localStorage.getItem("token");
   const decoded = token ? JSON.parse(atob(token.split(".")[1])) : null;
   const isWorker = decoded?.role === "worker";
+  const applicationStatus = gig.application?.status;
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-[#EDE7E3] rounded-2xl shadow-lg mt-12">
@@ -189,15 +190,27 @@ export default function GigDetail() {
           </button>
         )}
 
-        {isWorker && applied && (
-          <span className="inline-flex items-center px-3 py-1 rounded-full bg-green-200 text-green-800 border border-green-400 font-medium border-2">
+        {isWorker && applicationStatus === "pending" && (
+          <span className="inline-flex items-center px-3 py-1 rounded-full bg-yellow-200 text-yellow-800 border-2 border-yellow-400 font-medium">
             Applied
+          </span>
+        )}
+
+        {isWorker && applicationStatus === "accepted" && (
+          <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-200 text-blue-800 border-2 border-blue-400 font-medium">
+            Accepted
+          </span>
+        )}
+
+        {isWorker && applicationStatus === "completed" && (
+          <span className="inline-flex items-center px-3 py-1 rounded-full bg-green-200 text-green-800 border-2 border-green-400 font-medium">
+            Completed
           </span>
         )}
       </div>
 
       {/* Worker rating UI */}
-      {isWorker && applied && !ratingSubmitted && (
+      {isWorker && applicationStatus === "completed" && !ratingSubmitted && (
         <div className="mt-4">
           <p className="text-gray-700 font-semibold mb-2">
             Rate this employer:
@@ -237,16 +250,14 @@ export default function GigDetail() {
 
       {/* Display submitted rating */}
       {isWorker &&
-        applied &&
+        applicationStatus === "completed" &&
         ratingSubmitted &&
-        gig.application?.workerRating && (
+        gig.application?.ratingEmployer && (
           <div className="mt-4 p-4 bg-green-100 rounded-lg">
-            <p className="font-semibold mb-1">Your rating:</p>
-            <p>{gig.application.workerRating.stars} ★</p>
-            {gig.application.workerRating.review && (
-              <p className="mt-1 text-gray-700">
-                "{gig.application.workerRating.review}"
-              </p>
+            <p className="font-semibold">Your rating:</p>
+            <p>{gig.application.ratingEmployer.stars} ★</p>
+            {gig.application.ratingEmployer.review && (
+              <p>"{gig.application.ratingEmployer.review}"</p>
             )}
           </div>
         )}

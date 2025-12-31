@@ -284,51 +284,64 @@ router.post("/:gigId/applicants/:appId/complete", verifyToken, async (req, res) 
     }
 });
 
-// WORKER RATES EMPLOYER
-router.post("/:gigId/applicants/:applicationId/rate-employer", async (req, res) => {
-    const { applicationId } = req.params;
-    const { stars, review } = req.body;
+// WORKER RATES EMPLOYER (ONCE ONLY)
+router.post(
+    "/:gigId/applicants/:applicationId/rate-employer",
+    verifyToken,
+    async (req, res) => {
+        const { stars, review } = req.body;
 
-    if (!stars || stars < 1 || stars > 5) {
-        return res.status(400).json({ error: "Stars must be between 1 and 5" });
-    }
+        if (req.user.role !== "worker") {
+            return res.status(403).json({ error: "Only workers can rate employers" });
+        }
 
-    try {
-        const application = await Application.findById(applicationId);
+        if (!stars || stars < 1 || stars > 5) {
+            return res.status(400).json({ error: "Stars must be 1–5" });
+        }
+
+        const application = await Application.findById(req.params.applicationId);
         if (!application) return res.status(404).json({ error: "Application not found" });
+
+        if (application.ratingEmployer?.stars) {
+            return res.status(400).json({ error: "Employer already rated" });
+        }
 
         application.ratingEmployer = { stars, review };
         await application.save();
 
-        res.json({ message: "Employer rating submitted successfully", application });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Failed to submit rating" });
+        res.json({ message: "Employer rated", rating: application.ratingEmployer });
     }
-});
+);
 
-// EMPLOYER RATES WORKER
-router.post("/:gigId/applicants/:applicationId/rate-worker", async (req, res) => {
-    const { applicationId } = req.params;
-    const { stars, review } = req.body;
+// EMPLOYER RATES WORKER (ONCE ONLY)
+router.post(
+    "/:gigId/applicants/:applicationId/rate-worker",
+    verifyToken,
+    async (req, res) => {
+        const { stars, review } = req.body;
 
-    if (!stars || stars < 1 || stars > 5) {
-        return res.status(400).json({ error: "Stars must be between 1 and 5" });
-    }
+        if (req.user.role !== "employer") {
+            return res.status(403).json({ error: "Only employers can rate workers" });
+        }
 
-    try {
-        const application = await Application.findById(applicationId);
+        if (!stars || stars < 1 || stars > 5) {
+            return res.status(400).json({ error: "Stars must be 1–5" });
+        }
+
+        const application = await Application.findById(req.params.applicationId);
         if (!application) return res.status(404).json({ error: "Application not found" });
+
+        if (application.ratingWorker?.stars) {
+            return res.status(400).json({ error: "Worker already rated" });
+        }
 
         application.ratingWorker = { stars, review };
         await application.save();
 
-        res.json({ message: "Worker rating submitted successfully", application });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Failed to submit rating" });
+        res.json({ message: "Worker rated", rating: application.ratingWorker });
     }
-});
+);
+
 
 router.get("/users/:userId/applications", async (req, res) => {
     const { userId } = req.params;

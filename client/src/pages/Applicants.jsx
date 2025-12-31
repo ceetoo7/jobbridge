@@ -76,16 +76,17 @@ export default function Applicants() {
       }
 
       await axios.post(
-        `http://localhost:5001/api/gigs/${gigId}/applicants/${appId}/rate-employer`,
+        `http://localhost:5001/api/gigs/${gigId}/applicants/${appId}/rate-worker`,
         { stars, review },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       setApplications((prev) =>
         prev.map((a) =>
-          a._id === appId ? { ...a, employerRating: { stars, review } } : a
+          a._id === appId ? { ...a, ratingWorker: { stars, review } } : a
         )
       );
+
       alert("Rating submitted!");
     } catch (err) {
       alert(err.response?.data?.message || err.message);
@@ -122,7 +123,7 @@ export default function Applicants() {
               </p>
             </div>
 
-            <span className="self-start px-3 py-0.5 rounded-full bg-green-200 text-green-800 border">
+            <span className="self-start px-3 py-0.5 rounded-full bg-green-200 text-green-800 border-2">
               {app.status.toUpperCase()}
             </span>
           </div>
@@ -165,8 +166,8 @@ export default function Applicants() {
           </div>
 
           {/* RATING */}
-          {app.status === "completed" && !app.employerRating && (
-            <div className="mt-6 border-t pt-4">
+          {app.status === "completed" && !app.ratingWorker && (
+            <div className="mt-6 pt-4">
               <p className="font-semibold mb-2 text-primary">
                 Rate this worker
               </p>
@@ -220,15 +221,13 @@ export default function Applicants() {
             </div>
           )}
 
-          {app.employerRating && (
-            <div className="mt-4 border-t pt-2">
+          {app.ratingWorker && (
+            <div className="mt-4  pt-2">
               <p className="text-green-600 font-semibold">
-                ★ Rated {app.employerRating.stars}/5
+                ★ Rated {app.ratingWorker.stars}/5
               </p>
-              {app.employerRating.review && (
-                <p className="text-gray-700 mt-1">
-                  {app.employerRating.review}
-                </p>
+              {app.ratingWorker.review && (
+                <p className="text-gray-700 mt-1">{app.ratingWorker.review}</p>
               )}
             </div>
           )}
