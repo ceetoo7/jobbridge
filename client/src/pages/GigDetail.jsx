@@ -110,7 +110,7 @@ export default function GigDetail() {
           ...gig,
           application: {
             ...gig.application,
-            workerRating: { stars: rating, review },
+            ratingEmployer: { stars: rating, review },
           },
         });
       } else {
