@@ -11,7 +11,7 @@ const parseJwt = (token) => {
       atob(base64)
         .split("")
         .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-        .join("")
+        .join(""),
     );
     return JSON.parse(jsonPayload);
   } catch (e) {
@@ -55,7 +55,7 @@ export default function Navbar() {
 
         {!token ? (
           <>
-            <Link to="/register" className="transition hover:text-secondary">
+            <Link to="/register" className="transition hover:text-highlight">
               Register
             </Link>
             <Link to="/login" className="transition hover:text-highlight">

@@ -3,8 +3,7 @@ import Application from "../models/Application.js";
 import User from "../models/User.js";
 import { getFairWage, isExploitative } from "../utils/fairWage.js";
 
-/* ================== GIGS ================== */
-
+// ================== gigs ================== 
 // employer - get my gigs
 export const getMyGigs = async (req, res) => {
     try {
@@ -65,6 +64,7 @@ export const createGig = async (req, res) => {
             title,
             description,
             skills,
+            skill: skills[0],
             location,
             offeredRate,
             fairRate,
@@ -113,7 +113,7 @@ export const deleteGig = async (req, res) => {
     }
 };
 
-/* ================== APPLICATIONS ================== */
+// ================== applications ================== 
 
 export const applyToGig = async (req, res) => {
     try {
@@ -167,7 +167,7 @@ export const completeGig = async (req, res) => {
     res.json({ message: "Marked completed" });
 };
 
-/* ================== RATINGS ================== */
+//================== ratings ================== 
 
 export const rateWorker = async (req, res) => {
     const app = await Application.findById(req.params.applicationId);
@@ -193,7 +193,7 @@ export const rateEmployer = async (req, res) => {
     res.json(app.ratingEmployer);
 };
 
-// ================== WORKER HISTORY ==================
+// ================== worker history==================
 export const workerHistory = async (req, res) => {
     try {
         if (req.user.id !== req.params.userId) {
@@ -207,7 +207,7 @@ export const workerHistory = async (req, res) => {
             .populate({
                 path: "gig",
                 select: "title offeredRate location",
-                populate: { path: "employer", select: "name" }, // populate employer name
+                populate: { path: "employer", select: "name" },
             })
             .sort({ updatedAt: -1 });
 

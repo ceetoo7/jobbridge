@@ -14,7 +14,27 @@ const UserSchema = new mongoose.Schema({
     skills: { type: [String], required: function () { return this.role === 'worker'; } },
     expectedRate: { type: Number },
     ratingAverage: { type: Number, default: 0 },
-    ratingCount: { type: Number, default: 0 }
+    ratingCount: { type: Number, default: 0 },
+
+    // CV Upload and Vector Profile Fields
+    cvUrl: { type: String, default: null },
+    cvText: { type: String, default: null },
+    cvVector: { type: Map, of: Number, default: null },
+    cvSummary: {
+        wordCount: { type: Number, default: 0 },
+        detectedSkills: [{ type: String }],
+        experienceMentions: [{ type: String }],
+        hasContactInfo: { type: Boolean, default: false },
+        hasPhone: { type: Boolean, default: false }
+    },
+    cvUploadedAt: { type: Date, default: null },
+    cvFileInfo: {
+        originalName: { type: String },
+        filename: { type: String },
+        size: { type: Number },
+        pageCount: { type: Number },
+        uploadMethod: { type: String, enum: ['pdf', 'text'] }
+    }
 
 }, { timestamps: true });
 

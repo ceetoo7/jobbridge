@@ -139,21 +139,25 @@ export default function GigList() {
                   <strong>Employer:</strong> {gig.employer?.name || "Anonymous"}
                 </p>
                 <p className="text-gray-500 text-sm mb-1">
-                  <strong>Skill:</strong> {gig.skills?.join(", ") || "N/A"}
+                  <strong>Skill:</strong>
+
+                  <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">
+                    {gig.skill || gig.skills?.[0] || "N/A"}
+                  </span>
                 </p>
                 <p className="text-gray-500 text-sm mb-1">
-                  <strong>Location:</strong>{" "}
+                  <strong>📍 Location:</strong>{" "}
                   {gig.location
                     ? `${gig.location.district}, ${gig.location.area}`
                     : "N/A"}
                 </p>
                 <p className="text-gray-500 text-sm mb-1">
-                  <strong>Offered Rate:</strong> NPR{" "}
-                  {Number(gig.offeredRate).toLocaleString()}
+                  <strong>💰 Offered Rate:</strong> NPR
+                  {Number(gig.offeredRate).toLocaleString()} / day
                 </p>
                 <p className="text-green-500 text-sm mb-2">
-                  <strong>Fair Rate:</strong> NPR{" "}
-                  {fair != null ? fair.toLocaleString() : "N/A"}
+                  <strong>Fair Rate:</strong> NPR
+                  {fair != null ? fair.toLocaleString() : "N/A"} / day
                 </p>
                 {exploitative && (
                   <p className="text-red-500 font-semibold text-sm">

@@ -22,18 +22,22 @@ export const matchGigs = (worker, gigs, threshold = 7.5) => {
 
             const gigSkill = normalize(gig.skill);
 
-            // Skill matching
+
+
             const matchedSkills = workerSkills.filter(skill => skill === gigSkill);
             if (matchedSkills.length === 0) return null;
             score += matchedSkills.length * 5;
 
-            // Location matching
+
+
+
             const gigLocation = gig.location?.district || "";
             if (worker.location && normalize(worker.location) === normalize(gigLocation)) {
                 score += 2.5;
             }
 
-            // Wage matching
+
+
             if (
                 gig.offeredRate != null &&
                 worker.expectedRate != null &&
@@ -42,7 +46,6 @@ export const matchGigs = (worker, gigs, threshold = 7.5) => {
                 score += 2.5;
             }
 
-            // Debug logs
             console.log("Gig ID:", gig._id);
             console.log("Worker skills:", workerSkills);
             console.log("Gig skill:", gigSkill);

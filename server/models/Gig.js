@@ -28,6 +28,10 @@ const GigSchema = new mongoose.Schema(
             required: true,
         },
 
+        skill: {
+            type: String,
+        },
+
         offeredRate: {
             type: Number,
             required: true,

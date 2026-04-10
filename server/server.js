@@ -8,6 +8,7 @@ import gigRoutes from './routes/gigRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import applicationRoutes from './routes/applicationRoutes.js';
 import matchRoutes from './routes/matchRoutes.js';
+import cvRoutes from './routes/cvRoutes.js';
 import { verifyToken } from './middleware/auth.js';
 
 
@@ -31,10 +32,13 @@ app.use('/api/users', verifyToken, userRoutes);
 app.use('/api/applications', verifyToken, applicationRoutes);
 
 // Match routes (protected)
-app.use("/api/match", matchRoutes);
+app.use("/api/match", verifyToken, matchRoutes);
+
+// CV routes (protected)
+app.use("/api/cv", verifyToken, cvRoutes);
 
 // Health check
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
     res.json({ message: 'JobBridge Nepal API - Running ✅' });
 });
 
@@ -45,13 +49,13 @@ const PORT = process.env.PORT || 5001;
 
 mongoose.connect(process.env.MONGO_URI)
     .then(() => {
-        console.log('✅ Connected to MongoDB');
+        console.log('Connected to MongoDB');
         app.listen(PORT, () => {
             console.log(`🚀 Server running on http://localhost:${PORT}`);
         });
     })
     .catch((err) => {
-        console.error('❌ MongoDB connection error:', err);
+        console.error('MongoDB connection error:', err);
         process.exit(1);
     });
 

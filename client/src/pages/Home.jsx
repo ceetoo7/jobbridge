@@ -2,9 +2,9 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import heroImage from "../assets/all3x.png";
-import carpenter from "../assets/carpenter.jpg";
-import electrician from "../assets/electrician.jpg";
-import plumber from "../assets/painter.jpg";
+import painter1 from "../assets/painter1.jpg";
+import electrician1 from "../assets/electrician1.jpg";
+import plumber1 from "../assets/plumber1.jpg";
 
 export default function Home() {
   return (
@@ -90,13 +90,13 @@ export default function Home() {
             {/* Carpenter */}
             <div className="bg-white rounded-xl shadow-lg overflow-hidden">
               <img
-                src={carpenter}
+                src={plumber1}
                 alt="Carpenter"
                 className="w-full h-80 object-cover"
               />
               <div className="p-4 text-center bg-primary">
                 <h4 className="font-semibold text-background text-lg">
-                  Carpenter
+                  Plumber
                 </h4>
               </div>
             </div>
@@ -104,7 +104,7 @@ export default function Home() {
             {/* Electrician */}
             <div className="bg-white rounded-xl shadow-lg overflow-hidden">
               <img
-                src={electrician}
+                src={electrician1}
                 alt="Electrician"
                 className="w-full h-80 object-cover"
               />
@@ -118,7 +118,7 @@ export default function Home() {
             {/* Plumber */}
             <div className="bg-white rounded-xl shadow-lg overflow-hidden">
               <img
-                src={plumber}
+                src={painter1}
                 alt="Plumber"
                 className="w-full h-80 object-cover"
               />
