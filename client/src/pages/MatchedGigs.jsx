@@ -9,10 +9,10 @@ const MatchedGigs = () => {
   const [error, setError] = useState("");
   const [matchInfo, setMatchInfo] = useState({
     hasCV: false,
-    algorithm: "hybrid",
+    algorithm: "traditional",
     totalMatches: 0,
   });
-  const [algorithmMode, setAlgorithmMode] = useState("hybrid");
+  const [algorithmMode, setAlgorithmMode] = useState("traditional");
   const navigate = useNavigate();
 
   const token = localStorage.getItem("token");
@@ -25,15 +25,10 @@ const MatchedGigs = () => {
       }
 
       setLoading(true);
+      setError("");
       try {
-        // Use the new hybrid matching endpoint
         const endpoint =
-          algorithmMode === "hybrid"
-            ? "/match/gigs"
-            : algorithmMode === "vector"
-              ? "/match/gigs/vector"
-              : "/match/gigs/traditional";
-
+          algorithmMode === "vector" ? "/match/gigs/vector" : "/match/gigs/traditional";
         const response = await axios.get(endpoint, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -61,79 +56,22 @@ const MatchedGigs = () => {
     fetchMatchedGigs();
   }, [navigate, token, algorithmMode]);
 
-  const getScoreColor = (score) => {
-    if (!score && score !== 0) return "bg-gray-400";
-    if (score >= 80) return "bg-green-500";
-    if (score >= 60) return "bg-yellow-500";
-    if (score >= 40) return "bg-orange-500";
-    return "bg-red-500";
-  };
-
-  const getScoreLabel = (score) => {
-    if (!score && score !== 0) return "Unknown";
-    if (score >= 80) return "Excellent Match";
-    if (score >= 60) return "Good Match";
-    if (score >= 40) return "Fair Match";
-    return "Low Match";
-  };
-
-  const submitRating = async (gigId, rating) => {
-    try {
-      await axios.post(
-        "/ratings/worker-to-employer",
-        { gigId, rating },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-
-      setGigs((prev) =>
-        prev.map((g) => (g._id === gigId ? { ...g, workerRating: rating } : g)),
-      );
-    } catch (err) {
-      alert("Rating failed. Try again.");
-    }
-  };
-
   if (loading)
     return <p className="text-center mt-10 text-gray-500">Loading gigs...</p>;
 
   return (
     <div className="max-w-6xl mx-auto p-4">
-      {/* Header with Algorithm Selection */}
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-primary mb-2">
           🎯 Smart Gig Matches
         </h1>
         <p className="text-gray-600 mb-4">
-          Powered by{" "}
-          {algorithmMode === "hybrid" &&
-            "Hybrid Matching (Vector + Traditional)"}
-          {algorithmMode === "vector" && "AI Vector Matching"}
-          {algorithmMode === "traditional" && "Traditional Skill Matching"}
+          {algorithmMode === "traditional"
+            ? "Traditional Matching (Profile Skills)"
+            : "AI Vector Matching (CV + Gig Details)"}
         </p>
 
-        {/* Algorithm Toggle */}
         <div className="flex justify-center gap-2 mb-4">
-          <button
-            onClick={() => setAlgorithmMode("hybrid")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-              algorithmMode === "hybrid"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-            }`}
-          >
-            Hybrid
-          </button>
-          <button
-            onClick={() => setAlgorithmMode("vector")}
-            disabled={!matchInfo.hasCV}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-              algorithmMode === "vector"
-                ? "bg-purple-600 text-white"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-            } ${!matchInfo.hasCV ? "opacity-50 cursor-not-allowed" : ""}`}
-          >
-            Vector {!matchInfo.hasCV && "(No CV)"}
-          </button>
           <button
             onClick={() => setAlgorithmMode("traditional")}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
@@ -144,29 +82,30 @@ const MatchedGigs = () => {
           >
             Traditional
           </button>
+          <button
+            onClick={() => setAlgorithmMode("vector")}
+            disabled={!matchInfo.hasCV}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+              algorithmMode === "vector"
+                ? "bg-purple-600 text-white"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            } ${!matchInfo.hasCV ? "opacity-50 cursor-not-allowed" : ""}`}
+          >
+            Vector {!matchInfo.hasCV ? "(No CV)" : ""}
+          </button>
         </div>
 
-        {/* Algorithm Info */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-2xl mx-auto">
           <p className="text-sm text-blue-800">
-            {algorithmMode === "hybrid" && (
+            {algorithmMode === "traditional" ? (
               <>
-                💡 <strong>Hybrid Matching:</strong> Combines CV semantic
-                analysis (50%) with skills, location, and rate matching (50%)
-                for the most accurate results.
+                <strong>Traditional Matching:</strong> Matches worker profile skills
+                with gig skill tags, then prioritizes better location/rate fit.
               </>
-            )}
-            {algorithmMode === "vector" && (
+            ) : (
               <>
-                <strong>AI Vector Matching:</strong> Uses TF-IDF and Cosine
-                Similarity to analyze your CV content against gig descriptions.
-                Finds semantic matches beyond keywords.
-              </>
-            )}
-            {algorithmMode === "traditional" && (
-              <>
-                📋 <strong>Traditional Matching:</strong> Based on explicit
-                skill tags, location matching, and wage requirements.
+                <strong>AI Vector Matching:</strong> Matches CV content with gig
+                details after skill-tag filtering.
               </>
             )}
           </p>
@@ -213,12 +152,6 @@ const MatchedGigs = () => {
             ? `${gig.location.district}, ${gig.location.area || "Unknown Area"}`
             : "Unknown Location";
 
-          const matchScore = gig.matchScore ?? 0;
-          const hasDetailedScores =
-            algorithmMode === "hybrid" &&
-            (gig.vectorScore !== undefined ||
-              gig.traditionalScore !== undefined);
-
           return (
             <div
               key={gig._id}
@@ -226,27 +159,6 @@ const MatchedGigs = () => {
                 exploitative ? "border-red-500" : "border-green-500"
               } hover:shadow-xl transition-shadow`}
             >
-              {/* Match Score Badge */}
-              {matchScore > 0 && (
-                <div className="flex justify-end mb-2">
-                  <div className="text-right">
-                    <div
-                      className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${getScoreColor(
-                        matchScore,
-                      )} bg-opacity-20`}
-                    >
-                      <div
-                        className={`w-3 h-3 rounded-full ${getScoreColor(matchScore)}`}
-                      />
-                      <span className="text-sm font-bold">{matchScore}%</span>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {getScoreLabel(matchScore)}
-                    </p>
-                  </div>
-                </div>
-              )}
-
               <div
                 onClick={() => navigate(`/gigs/${gig._id}`)}
                 className="cursor-pointer"
@@ -287,41 +199,6 @@ const MatchedGigs = () => {
                 </div>
               </div>
 
-              {/* Detailed Score Breakdown (for Hybrid) */}
-              {hasDetailedScores && (
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <p className="text-xs font-medium text-gray-600 mb-2">
-                    Score Breakdown:
-                  </p>
-                  <div className="flex gap-3 text-xs">
-                    {gig.vectorScore !== undefined && (
-                      <span className="text-purple-600">
-                        Vector: <strong>{gig.vectorScore}%</strong>
-                      </span>
-                    )}
-                    {gig.traditionalScore !== undefined && (
-                      <span className="text-green-600">
-                        Traditional:{" "}
-                        <strong>{Math.round(gig.traditionalScore)}%</strong>
-                      </span>
-                    )}
-                  </div>
-                  {gig.scoringDetails && (
-                    <div className="flex gap-2 mt-2 text-xs">
-                      {gig.scoringDetails.skillMatch && (
-                        <span className="text-green-600">✓ Skill</span>
-                      )}
-                      {gig.scoringDetails.locationMatch && (
-                        <span className="text-green-600">✓ Location</span>
-                      )}
-                      {gig.scoringDetails.rateMatch && (
-                        <span className="text-green-600">✓ Rate</span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
               {/* Apply Button */}
               <button
                 onClick={() => navigate(`/gigs/${gig._id}`)}
@@ -342,8 +219,7 @@ const MatchedGigs = () => {
             No matching gigs found
           </h3>
           <p className="text-gray-500 max-w-md mx-auto mb-4">
-            Try uploading your CV for better AI-powered matching, or adjust your
-            skills and expected rate in your profile.
+            Try uploading your CV and make sure your profile skills are updated.
           </p>
           <button
             onClick={() => navigate("/profile")}

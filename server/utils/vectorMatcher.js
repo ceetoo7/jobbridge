@@ -4,6 +4,7 @@
 
 /* ---------------- NORMALIZE ---------------- */
 const normalize = (str) => str?.toString().trim().toLowerCase();
+const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /* ---------------- TOKENIZE ---------------- */
 const tokenize = (text) => {
@@ -43,7 +44,13 @@ const skillSynonyms = {
     cleaner: ['cleaner', 'cleaning', 'housekeeping'],
 };
 
-/* ---------------- IMPROVED SKILL CATEGORY ---------------- */
+const hasWholeTerm = (text, term) => {
+    if (!text || !term) return false;
+    const rx = new RegExp(`\\b${escapeRegExp(term.toLowerCase())}\\b`, 'i');
+    return rx.test(text);
+};
+
+/* ---------------- SKILL CATEGORY ---------------- */
 const getSkillCategory = (text) => {
     if (!text) return null;
 
@@ -52,16 +59,8 @@ const getSkillCategory = (text) => {
 
     for (const [category, synonyms] of Object.entries(skillSynonyms)) {
         for (const term of synonyms) {
-            // ✅ exact match
-            if (words.includes(term)) return category;
-
-            // ✅ partial match (plumber vs plumbing)
-            if (words.some(w => w.startsWith(term) || term.startsWith(w))) {
-                return category;
-            }
-
-            // ✅ phrase match (pipe fitting, electrical work)
-            if (fullText.includes(term)) return category;
+            // Only allow full word/term matches to avoid false positives
+            if (words.includes(term) || hasWholeTerm(fullText, term)) return category;
         }
     }
 
@@ -71,12 +70,25 @@ const getSkillCategory = (text) => {
 /* ---------------- SKILL MATCH ---------------- */
 const isSkillMatch = (workerSkills, gigText) => {
     const gigCategory = getSkillCategory(gigText);
+    const normalizedGigTokens = new Set(tokenize(gigText || ''));
 
     return workerSkills.some(ws => {
-        const workerCategory = getSkillCategory(ws);
-        return workerCategory && workerCategory === gigCategory;
+        const normalizedWs = normalize(ws);
+        if (!normalizedWs) return false;
+
+        // Strict direct skill-tag match
+        if (normalizedGigTokens.has(normalizedWs)) return true;
+
+        // Controlled category match for known trade skills only
+        const workerCategory = getSkillCategory(normalizedWs);
+        return Boolean(workerCategory && gigCategory && workerCategory === gigCategory);
     });
 };
+
+const buildGigSkillText = (gig) => [
+    gig.skill,
+    ...(Array.isArray(gig.skills) ? gig.skills : [])
+].filter(Boolean).join(' ');
 
 /* ---------------- TF ---------------- */
 const calculateTF = (text) => {
@@ -142,86 +154,108 @@ const cosineSimilarity = (v1, v2) => {
     return dot / (m1 * m2);
 };
 
-/* ---------------- MAIN MATCH ---------------- */
-export const smartMatch = (worker, gigs) => {
-    const workerSkills = Array.isArray(worker.skills)
-        ? worker.skills.map(normalize)
-        : [];
+/* ---------------- CV SUMMARY ---------------- */
+export const generateCVSummary = (cvText) => {
+    if (!cvText) return null;
 
-    /* -------- HARD FILTER -------- */
-    const filtered = gigs.filter(gig => {
-        const gigText = [
-            gig.skill,
-            gig.title,
-            gig.description
-        ].join(' ');
+    const normalizedText = cvText.toLowerCase();
+    const wordCount = cvText.split(/\s+/).length;
+    const detectedSkills = new Set();
+    const experienceMentions = [];
 
-        // 🔥 FIX: use full gig text
-        const skillMatch = isSkillMatch(workerSkills, gigText);
-        if (!skillMatch) return false;
-
-        const locationMatch =
-            worker.location?.district &&
-            normalize(worker.location.district) === normalize(gig.location?.district);
-
-        const rateMatch =
-            gig.offeredRate != null &&
-            worker.expectedRate != null &&
-            gig.offeredRate >= worker.expectedRate;
-
-        return locationMatch || rateMatch;
+    // Detect skills from synonym dictionary with strict whole-term match
+    Object.values(skillSynonyms).forEach(synonyms => {
+        synonyms.forEach(term => {
+            if (hasWholeTerm(normalizedText, term)) {
+                detectedSkills.add(term);
+            }
+        });
     });
 
-    if (filtered.length === 0) return [];
+    // Simple extraction for "X years/months experience" style phrases
+    const experiencePatterns = [
+        /\b\d+\+?\s*(?:years?|yrs?)\s*(?:of\s+)?experience\b/gi,
+        /\b\d+\+?\s*(?:months?|mos?)\s*(?:of\s+)?experience\b/gi,
+        /\b(?:experienced?|experience)\s+(?:in|with)\s+[a-z\s]{2,40}\b/gi
+    ];
 
-    /* -------- VECTOR RANKING -------- */
+    experiencePatterns.forEach(rx => {
+        const matches = normalizedText.match(rx) || [];
+        matches.forEach(m => {
+            if (experienceMentions.length < 10) {
+                experienceMentions.push(m.trim());
+            }
+        });
+    });
+
+    const hasEmail = /\b[\w.-]+@[\w.-]+\.\w{2,}\b/.test(cvText);
+    const hasPhone = /\b(?:\+?\d{1,3}[\s-]?)?(?:\d[\s-]?){7,}\d\b/.test(cvText);
+
+    return {
+        wordCount,
+        detectedSkills: Array.from(detectedSkills),
+        experienceMentions,
+        hasContactInfo: hasEmail || hasPhone,
+        hasEmail,
+        hasPhone
+    };
+};
+
+/* ---------------- VECTOR-ONLY MATCH ---------------- */
+export const matchByVector = (worker, gigs, options = {}) => {
+    const threshold = options.threshold ?? 15;
+    const profileSkills = Array.isArray(worker.skills) ? worker.skills : [];
+    const cvDetectedSkills = Array.isArray(worker.cvSummary?.detectedSkills)
+        ? worker.cvSummary.detectedSkills
+        : [];
+    const workerSkills = [...new Set([...profileSkills, ...cvDetectedSkills].map(normalize).filter(Boolean))];
+
+    if (!Array.isArray(gigs) || gigs.length === 0) return [];
+
     const workerText = preprocessText([
         worker.cvText || '',
-        ...(worker.skills || [])
+        ...profileSkills,
+        ...cvDetectedSkills
     ].join(' '));
 
-    const processedGigs = filtered.map(gig => ({
+    const processedGigs = gigs.map(gig => ({
         ...gig,
+        skillText: buildGigSkillText(gig),
+        fullText: [
+            gig.title,
+            gig.description,
+            gig.skill,
+            ...(Array.isArray(gig.skills) ? gig.skills : [])
+        ].join(' '),
         processed: preprocessText([
             gig.title,
             gig.description,
-            gig.skill
+            gig.skill,
+            ...(Array.isArray(gig.skills) ? gig.skills : [])
         ].join(' '))
     }));
 
     const corpus = [workerText, ...processedGigs.map(g => g.processed)];
     const idf = calculateIDF(corpus);
-
     const workerVec = createTFIDFVector(workerText, idf);
 
-    const ranked = processedGigs.map(gig => {
-        const gigVec = createTFIDFVector(gig.processed, idf);
-        const similarity = cosineSimilarity(workerVec, gigVec);
-
-        return {
-            ...gig,
-            score: Math.round(similarity * 100)
-        };
-    });
-
-    return ranked.sort((a, b) => b.score - a.score);
+    return processedGigs
+        .map(gig => {
+            const shouldApplySkillGate = workerSkills.length > 0;
+            if (shouldApplySkillGate && !isSkillMatch(workerSkills, gig.skillText)) return null;
+            const gigVec = createTFIDFVector(gig.processed, idf);
+            const vectorScore = Math.round(cosineSimilarity(workerVec, gigVec) * 100);
+            return {
+                ...gig,
+                vectorScore,
+                matchScore: vectorScore,
+                score: vectorScore
+            };
+        })
+        .filter(Boolean)
+        .filter(gig => gig.vectorScore >= threshold)
+        .sort((a, b) => b.vectorScore - a.vectorScore);
 };
-
-/* ---------------- CV SUMMARY ---------------- */
-export const generateCVSummary = (cvText) => {
-    if (!cvText) return null;
-
-    const wordCount = cvText.split(/\s+/).length;
-
-    return {
-        wordCount,
-        hasEmail: /\b[\w.-]+@[\w.-]+\.\w{2,}\b/.test(cvText),
-        hasPhone: /\b\d{7,}\b/.test(cvText)
-    };
-};
-
-/* ---------------- EXPORT FIX ---------------- */
-export const hybridMatch = smartMatch;
 
 /* ---------------- DEFAULT EXPORT ---------------- */
-export default smartMatch;
+export default matchByVector;

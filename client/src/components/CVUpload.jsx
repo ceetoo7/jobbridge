@@ -214,7 +214,7 @@ export default function CVUpload() {
               <strong>3. Cosine Similarity:</strong> Your CV vector is compared with gig description vectors to find semantic matches.
             </li>
             <li>
-              <strong>4. Hybrid Scoring:</strong> Combines vector similarity (50%) with traditional matching (50%) for best results.
+              <strong>4. Skill-Gated Results:</strong> Only gigs with matching skill tags are shown, then ranked by vector relevance.
             </li>
           </ul>
         </div>

@@ -11,20 +11,17 @@ export default function EnhancedGigMatches() {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [algorithm, setAlgorithm] = useState('hybrid');
   const [hasCV, setHasCV] = useState(false);
 
   useEffect(() => {
     fetchMatches();
-  }, [algorithm]);
+  }, []);
 
   const fetchMatches = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const endpoint = algorithm === 'hybrid' ? '/api/match/gigs' :
-                       algorithm === 'vector' ? '/api/match/gigs/vector' :
-                       '/api/match/gigs/traditional';
+      const endpoint = '/api/match/gigs';
 
       const response = await axios.get(`${API_URL}${endpoint}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -39,20 +36,6 @@ export default function EnhancedGigMatches() {
     }
   };
 
-  const getScoreColor = (score) => {
-    if (score >= 80) return 'bg-green-500';
-    if (score >= 60) return 'bg-yellow-500';
-    if (score >= 40) return 'bg-orange-500';
-    return 'bg-red-500';
-  };
-
-  const getScoreLabel = (score) => {
-    if (score >= 80) return 'Excellent Match';
-    if (score >= 60) return 'Good Match';
-    if (score >= 40) return 'Fair Match';
-    return 'Low Match';
-  };
-
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-md p-6">
@@ -61,43 +44,8 @@ export default function EnhancedGigMatches() {
           <div>
             <h2 className="text-2xl font-bold">🎯 Smart Gig Matches</h2>
             <p className="text-gray-600 text-sm mt-1">
-              Powered by {algorithm === 'hybrid' ? 'Hybrid (Vector + Traditional)' :
-                          algorithm === 'vector' ? 'Vector-Based AI' : 'Traditional'}
+              Powered by Vector-Based AI
             </p>
-          </div>
-
-          <div className="flex gap-2">
-            <button
-              onClick={() => setAlgorithm('hybrid')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                algorithm === 'hybrid'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              Hybrid
-            </button>
-            <button
-              onClick={() => setAlgorithm('vector')}
-              disabled={!hasCV}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                algorithm === 'vector'
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              } ${!hasCV ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              Vector Only {!hasCV && '(No CV)'}
-            </button>
-            <button
-              onClick={() => setAlgorithm('traditional')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                algorithm === 'traditional'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              Traditional
-            </button>
           </div>
         </div>
 
@@ -107,22 +55,16 @@ export default function EnhancedGigMatches() {
             <span className="text-2xl">💡</span>
             <div>
               <h4 className="font-semibold text-blue-900">
-                {algorithm === 'hybrid' ? 'Hybrid Matching Algorithm' :
-                 algorithm === 'vector' ? 'Vector-Based Matching (AI)' :
-                 'Traditional Weighted Matching'}
+                Vector-Based Matching (AI)
               </h4>
               <p className="text-blue-800 text-sm mt-1">
-                {algorithm === 'hybrid'
-                  ? 'Combines CV content analysis (50%) with skills, location, and rate matching (50%) for the most accurate results.'
-                  : algorithm === 'vector'
-                  ? 'Uses TF-IDF and Cosine Similarity to analyze your CV against gig descriptions. Finds semantic matches beyond keywords.'
-                  : 'Traditional matching based on explicit skill tags, location, and wage requirements.'}
+                Uses TF-IDF and cosine similarity to match your CV text with gig details, after strict skill-tag filtering.
               </p>
             </div>
           </div>
         </div>
 
-        {!hasCV && algorithm === 'vector' && (
+        {!hasCV && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
             <p className="text-yellow-800">
               ⚠️ Please upload your CV first to use Vector-Based matching.
@@ -178,61 +120,7 @@ export default function EnhancedGigMatches() {
                   </div>
                 </div>
 
-                {/* Match Score */}
-                <div className="ml-4 text-right">
-                  <div className="relative w-16 h-16">
-                    <svg className="w-16 h-16 transform -rotate-90">
-                      <circle
-                        cx="32"
-                        cy="32"
-                        r="28"
-                        stroke="#e5e7eb"
-                        strokeWidth="4"
-                        fill="none"
-                      />
-                      <circle
-                        cx="32"
-                        cy="32"
-                        r="28"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        fill="none"
-                        strokeDasharray={`${(gig.matchScore || gig.vectorScore || 0) * 1.76} 176`}
-                        className={`${getScoreColor(gig.matchScore || gig.vectorScore || 0)} transition-all duration-1000`}
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-sm font-bold">
-                        {gig.matchScore || gig.vectorScore || 0}%
-                      </span>
-                    </div>
-                  </div>
-                  <span className={`text-xs font-medium ${
-                    (gig.matchScore || gig.vectorScore || 0) >= 60 ? 'text-green-600' : 'text-yellow-600'
-                  }`}>
-                    {getScoreLabel(gig.matchScore || gig.vectorScore || 0)}
-                  </span>
-                </div>
               </div>
-
-              {/* Score Breakdown (for hybrid) */}
-              {algorithm === 'hybrid' && gig.scoringDetails && (
-                <div className="mt-3 pt-3 border-t border-gray-100">
-                  <div className="flex gap-4 text-xs text-gray-500">
-                    <span>
-                      Vector: <strong>{gig.vectorScore}%</strong>
-                    </span>
-                    <span>
-                      Traditional: <strong>{Math.round(gig.traditionalScore)}%</strong>
-                    </span>
-                    <div className="flex gap-2">
-                      {gig.scoringDetails?.skillMatch && <span className="text-green-600">✓ Skill</span>}
-                      {gig.scoringDetails?.locationMatch && <span className="text-green-600">✓ Location</span>}
-                      {gig.scoringDetails?.rateMatch && <span className="text-green-600">✓ Rate</span>}
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* Apply Button */}
               <button className="mt-3 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition-colors">

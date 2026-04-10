@@ -8,13 +8,13 @@ import {
 
 const router = express.Router();
 
-// Get hybrid matched gigs (vector + traditional)
+// Get traditional matched gigs (worker profile -> gig skills)
 router.get("/gigs", verifyToken, getMatchedGigs);
 
 // Get vector-only matches (requires CV)
 router.get("/gigs/vector", verifyToken, getVectorMatches);
 
-// Get traditional skill-based matches only
+// Explicit traditional route
 router.get("/gigs/traditional", verifyToken, getTraditionalMatches);
 
 export default router;
